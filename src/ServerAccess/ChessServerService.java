@@ -72,8 +72,8 @@ public class ChessServerService {
      *         returns null if user doesn't exist or if invalid input
      * @throws IOException if error in connection to the server
      */
-    public User updateUser(String username, User newUser) throws IOException {
-        String url = BASE_URL + "user/update/" + username;
+    public User updateUser(int userID, User newUser) throws IOException {
+        String url = BASE_URL + "user/update/" + userID;
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
         InputStreamReader reader = null;
@@ -122,8 +122,8 @@ public class ChessServerService {
      * @return list of usernames of requesting users.
      * @throws IOException if there is a error in connecting to the server
      */
-    public UsernameList getGameRequests(String username) throws IOException {
-        String url = BASE_URL + "gameRequest/" + username;
+    public UsernameList getGameRequests(int userID) throws IOException {
+        String url = BASE_URL + "gameRequest/" + userID;
         try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
             UsernameList requestingUsers = new Gson().fromJson(reader, UsernameList.class);
             return requestingUsers;
@@ -322,10 +322,11 @@ public class ChessServerService {
     
      /**
      * reset server for this user to no outstanding requests
+     * @return "success" if reset successful
      * @throws IOException if there is a error in connecting to the server
      */
-    public String reset(String username) throws IOException {
-        String url = BASE_URL + "gameRequest/reset/" + username;
+    public String reset(int userID, String availability) throws IOException {
+        String url = BASE_URL + "gameRequest/reset/" + userID + "/" + availability;
         try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
             String response = new Gson().fromJson(reader, String.class);
             return response;

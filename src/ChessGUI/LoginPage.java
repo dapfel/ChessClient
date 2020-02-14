@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGameLogic.ChessGame;
 import ChessGameLogic.SavedGame;
 import ChessGameLogic.ServerNegotiationTask;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +22,7 @@ import javafx.stage.Stage;
  */
 public class LoginPage {
     
-    private Scene loginScene;
+    private final Scene loginScene;
     
     public LoginPage(Stage primaryStage, ExecutorService pool) {
         GridPane grid = new GridPane();

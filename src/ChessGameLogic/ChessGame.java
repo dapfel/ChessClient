@@ -7,7 +7,16 @@ package ChessGameLogic;
  */
 public class ChessGame {
     
-    public ChessGame() {
+    public enum PlayerColor {WHITE, BLACK};
+    
+    private final PlayerColor playerColor;
+    
+    public ChessGame(PlayerColor playerColor) {
+        this.playerColor = playerColor;
+    }
+
+    public PlayerColor getPlayerColor() {
+        return playerColor;
     }
     
 }

@@ -6,6 +6,8 @@ import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -32,8 +34,8 @@ public class HomePage {
     private User user;
     private ListView<String> availablePlayersList;
     private ListView<String> requestingPlayersList;
-    private Stage primaryStage;
-    private ExecutorService pool;
+    private final Stage primaryStage;
+    private final ExecutorService pool;
     PlayerListsRefresher playerListsRefresher;
     AcceptedGameChecker acceptedGameChecker;
     Timer timer1;
@@ -42,7 +44,9 @@ public class HomePage {
     public HomePage(Stage primaryStage, ExecutorService pool, User user) {
         
         this.user = user;
-        reset(); // reset to no games or requests for the client user
+        this.primaryStage = primaryStage;
+        this.pool = pool;
+        reset("available"); // reset to no games or requests for the client user and that available
         
         BorderPane border = new BorderPane();
         border.setTop(TopButtonsHbox());
@@ -63,12 +67,21 @@ public class HomePage {
         logOutButton.setPrefSize(100, 20);
         logOutButton.setOnMouseClicked(mouseEvent -> {
             user = null;
+            reset("unavailable");
             Scene loginScene = new LoginPage(primaryStage, pool).getLoginScene();
             primaryStage.setScene(loginScene);
             primaryStage.show();
         });
         
-        topButtonsHbox.getChildren().addAll(logOutButton);
+        Button updateUserButton = new Button("Update User Profile");
+        updateUserButton.setPrefSize(100, 20);
+        updateUserButton.setOnMouseClicked(mouseEvent -> {
+            Scene updateUserScene = new UpdateUserPage(primaryStage, pool).getUpdateUserScene();
+            primaryStage.setScene(updateUserScene);
+            primaryStage.show();
+        });
+        
+        topButtonsHbox.getChildren().addAll(logOutButton,updateUserButton);
         return topButtonsHbox;
    }
     
@@ -227,8 +240,19 @@ public class HomePage {
         timer2.cancel();
     }
     
-    private void reset() {
-        pool.submit(new ServerNegotiationTask("reset", new String[0]));
+    public final void reset(String availability) {
+        try {
+            String[] params = {availability};
+            Future<String> result = pool.submit(new ServerNegotiationTask("reset", params));
+            if (!result.get().equals("success")) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Connection Error");
+                alert.setHeaderText(null);
+                alert.setContentText("Error connecting to Server. Available player and requests lists will not function properly.");
+                alert.showAndWait();
+            }
+            
+        } catch (InterruptedException | ExecutionException ex) {}
     }
 
     public Scene getHomeScene() {

@@ -1,6 +1,7 @@
 package ChessGUI;
 
 import ChessGameLogic.ChessGame;
+import ChessGameLogic.ChessGame.PlayerColor;
 import ChessGameLogic.ServerNegotiationTask;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,6 +19,7 @@ public class AcceptGameConfirmer extends TimerTask {
     private HomePage homePage;
     private Timer timer;
     private int attempts;
+    private int ioExceptions;
     
     public AcceptGameConfirmer(HomePage homePage, Timer timer) {
         this.homePage = homePage;
@@ -28,14 +30,12 @@ public class AcceptGameConfirmer extends TimerTask {
     @Override
     public void run() {
         
-        ServerNegotiationTask confirmAndStartGameTask = new ServerNegotiationTask("blackStartGame", null);
-        String requestingUser = confirmAndStartGameTask.getGameRequest().getGamerequestPK().getRequestingUser();
-        
-        while (attempts < 3) { // after 3 confirmation attempts cancel the game
-            Future<String> result = homePage.getPool().submit(confirmAndStartGameTask);
+        String requestingUser = ServerNegotiationTask.getGameRequest().getGamerequestPK().getRequestingUser();   
+        while (attempts < 3) { // after 3 confirmation (with other player) attempts, cancel the game 
+            Future<String> result = homePage.getPool().submit(new ServerNegotiationTask("blackStartGame", null));
             try {
                 if (result.get().equals("success")) {
-                    GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame());
+                    GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame(PlayerColor.BLACK));
                     Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
                     timer.cancel();
                     break;
@@ -44,7 +44,7 @@ public class AcceptGameConfirmer extends TimerTask {
                     attempts++;
             }
             catch (InterruptedException | ExecutionException e) {
-                if (attempts == 2) {
+                if (ioExceptions == 2) { //after 3 IO exceptions, cancel the game
                     Platform.runLater(() -> {
                         homePage.getRequestingPlayersList().getItems().remove(requestingUser); 
                         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -54,9 +54,10 @@ public class AcceptGameConfirmer extends TimerTask {
                         alert.showAndWait();
                     });
                     timer.cancel();
+                    Platform.runLater(() -> homePage.reset("onlyAvailable"));
                     homePage.startRefreshTimers();   
                 }
-                attempts++;
+                ioExceptions++;
             }
         }
         Platform.runLater(() -> {

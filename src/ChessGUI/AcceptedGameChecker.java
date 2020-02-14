@@ -6,6 +6,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import javafx.application.Platform;
+import ChessGameLogic.ChessGame.PlayerColor;
 
 /**
  *
@@ -13,7 +14,7 @@ import javafx.application.Platform;
  */
 public class AcceptedGameChecker extends TimerTask {
 
-    private HomePage homePage;
+    private final HomePage homePage;
     
     public AcceptedGameChecker(HomePage homePage) {
         this.homePage = homePage;
@@ -28,9 +29,11 @@ public class AcceptedGameChecker extends TimerTask {
         
             if (result.get().equals("success")) {
                 homePage.stopRefreshTimers();
-                String opponent = ServerNegotiationTask.getGameRequest().getGamerequestPK().getRequestedUser();
-                GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame());
+                GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame(PlayerColor.WHITE));
                 Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
+            }
+            if (result.get().equals("IOException")) {
+                Platform.runLater(() -> homePage.reset("onlyAvailable"));
             }
         }
         catch (InterruptedException | ExecutionException e) {}

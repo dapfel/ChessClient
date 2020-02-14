@@ -1,16 +1,14 @@
 package ChessGUI;
 
 import ChessGameLogic.SavedGame;
+import ChessGameLogic.ServerNegotiationTask;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -21,17 +19,19 @@ import javafx.stage.Stage;
 public class ChessClient extends Application {
     
     private static SavedGame savedGame; // to save/load a game to/from the computer when program not running
+    private ExecutorService pool;
     
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Internet Chess Game");
-        ExecutorService pool = Executors.newCachedThreadPool();
+        pool = Executors.newCachedThreadPool();
         LoginPage loginPage = new LoginPage(primaryStage, pool);
             
         primaryStage.setOnCloseRequest( event -> {   
-        pool.shutdown();
         if (savedGame != null)
             saveGame();
+        setUnavailable();
+        pool.shutdown();
         }); 
         
         primaryStage.setScene(loginPage.getLoginScene());
@@ -43,7 +43,7 @@ public class ChessClient extends Application {
         launch(args);
     }
     
-    public static void saveGame() {
+    private static void saveGame() {
         try {
             FileOutputStream fileOut = new FileOutputStream("C:\\Users\\user\\Desktop\\savedGame");
             try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
@@ -53,7 +53,7 @@ public class ChessClient extends Application {
         catch (IOException e) {}
     }
     
-    public static void loadGame() {
+    private static void loadGame() {
         try {
             FileInputStream fileIn = new FileInputStream("C:\\Users\\user\\Desktop\\savedGame");
             ObjectInputStream objectIn = new ObjectInputStream(fileIn);
@@ -64,5 +64,11 @@ public class ChessClient extends Application {
 
     public static SavedGame getSavedGame() {
         return savedGame;
+    }
+    
+    private void setUnavailable() {
+        String[] params = {"unavailable"};
+        ServerNegotiationTask task = new ServerNegotiationTask("getAvailableUsers", params);
+        pool.submit(task);
     }
 }

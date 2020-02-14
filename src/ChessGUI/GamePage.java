@@ -21,12 +21,13 @@ import javafx.stage.Stage;
 public class GamePage {
 
     private final Stage primaryStage;
-    ExecutorService pool;
+    private final ExecutorService pool;
     private final int gameID;
-    private Scene gameScene;
+    private final Scene gameScene;
     private final ChessGame chessGame;
     private User user;
-    private String opponent;
+    private final String opponent;
+    private final ChessBoardPane chessBoardPane;
     
     public GamePage(Stage primaryStage, ExecutorService pool, ChessGame chessGame) {
         this.gameID = ServerNegotiationTask.getGame().getGameID();
@@ -71,11 +72,14 @@ public class GamePage {
         
         topButtonsHbox.getChildren().addAll(endGameButton);
         
+        chessBoardPane = new ChessBoardPane(chessGame.getPlayerColor());
+        border.setCenter(chessBoardPane);
+        
         gameScene = new Scene(border, 600, 300);
         
         //when other finds game deleted (lastMove or make move returns null), just give message that other player ended game and then go to homepage
                 
-       // after every Move of black or white, save to savedGame of ChessClient
+       // after every Move of black or white, save to savedGame of ChessClient. when game ove make savedgame null
     }
 
     public Scene getGameScene() {

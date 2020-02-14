@@ -31,9 +31,15 @@ public class ServerNegotiationTask implements Callable<String> {
     public String call(){  
         try {
             switch (task) {
-                case "signIn" :
+                case "signIn":
                     // params[0] is username, params[1] is password
                     user = service.validateSignIn(params[0], params[1]); 
+                    if (user != null) 
+                        return "success";
+                    
+                case "updateUser":
+                    // params[0] is new Username, params[1] is new password
+                    user = service.updateUser(user.getUserID(), new User(params[0],params[1]));
                     if (user != null) 
                         return "success";
                         
@@ -50,13 +56,14 @@ public class ServerNegotiationTask implements Callable<String> {
                         return "success";
                     
                 case "getRequestingUsers":
-                    requestingUsers = service.getGameRequests(user.getUsername());
+                    requestingUsers = service.getGameRequests(user.getUserID());
                     if (requestingUsers != null)
                         return "success";
                 
                 case "requestGame":
                     // params[0] is requested players username
                     Gamerequest request = new Gamerequest(user.getUsername(), params[0]);
+                    request.setUser1(user);
                     request = service.makeGameRequest(request);
                     if (request != null) {
                         requestedUsers.add(params[0]);
@@ -91,7 +98,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     return "success";
                     
                 case "reset":
-                    reset(user.getUsername());
+                    return reset(user.getUserID(), params[0]);
                     
                 default : return null;
             }
@@ -101,14 +108,16 @@ public class ServerNegotiationTask implements Callable<String> {
         }
     }
     
-    private void reset(String username) throws IOException {
-        availableUsers = null; 
-        requestingUsers = null;
-        requestedUsers = null; 
-        gameRequest = null;
-        game = null;
-        opponent = null;
-        String response = service.reset(username);
+    private String reset(int userID, String availability) throws IOException {
+        if (!availability.equals("onlyAvailable")) {
+            availableUsers = null; 
+            requestingUsers = null;
+            requestedUsers = null; 
+            gameRequest = null;
+            game = null;
+            opponent = null;
+        }
+         return(service.reset(userID, availability));
     }
 
     public static User getUser() {
@@ -133,6 +142,14 @@ public class ServerNegotiationTask implements Callable<String> {
 
     public static void setGame(Game game) {
         ServerNegotiationTask.game = game;
+    }
+
+    public static UsernameList getAvailableUsers() {
+        return availableUsers;
+    }
+
+    public static UsernameList getRequestingUsers() {
+        return requestingUsers;
     }
     
 }
