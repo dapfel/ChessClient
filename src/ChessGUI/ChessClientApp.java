@@ -2,12 +2,13 @@ package ChessGUI;
 
 import ChessGameLogic.SavedGame;
 import ChessGameLogic.ServerNegotiationTask;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -16,21 +17,23 @@ import javafx.stage.Stage;
  *
  * @author user
  */
-public class ChessClient extends Application {
+public class ChessClientApp extends Application {
     
     private static SavedGame savedGame; // to save/load a game to/from the computer when program not running
-    private ExecutorService pool;
+    private ListeningExecutorService pool;
     
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Internet Chess Game");
-        pool = Executors.newCachedThreadPool();
+        pool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        ProgressDialog.setPrimaryStage(primaryStage);
         LoginPage loginPage = new LoginPage(primaryStage, pool);
             
         primaryStage.setOnCloseRequest( event -> {   
         if (savedGame != null)
             saveGame();
         setUnavailable();
+        HomePage.stopRefreshTimers();
         pool.shutdown();
         }); 
         
@@ -68,7 +71,7 @@ public class ChessClient extends Application {
     
     private void setUnavailable() {
         String[] params = {"unavailable"};
-        ServerNegotiationTask task = new ServerNegotiationTask("getAvailableUsers", params);
+        ServerNegotiationTask task = new ServerNegotiationTask("reset", params);
         pool.submit(task);
     }
 }

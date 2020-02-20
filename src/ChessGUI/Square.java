@@ -8,17 +8,17 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 /**
  *
  * @author dapfel
  */
-public class Square extends Pane {
+public class Square extends StackPane {
     
-    private int rank;
-    private char file;
+    private final int rank;
+    private final char file;
 
     public Square(int colorType, int rank, char file) {
         super();

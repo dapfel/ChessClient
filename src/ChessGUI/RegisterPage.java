@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import java.util.concurrent.ExecutorService;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -13,8 +12,11 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import ChessGameLogic.ServerNegotiationTask;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import javafx.application.Platform;
 
 /**
  *
@@ -22,9 +24,9 @@ import java.util.concurrent.Future;
  */
 public class RegisterPage {
     
-    private Scene registerScene;
+    private final Scene registerScene;
     
-    public RegisterPage(Stage primaryStage, ExecutorService pool) {
+    public RegisterPage(Stage primaryStage, ListeningExecutorService pool) {
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -60,38 +62,35 @@ public class RegisterPage {
         registerButton.setOnMouseClicked(mouseEvent -> {
             Alert alert;
             if (passwordField.getText().equals(passwordField2.getText())) {
+                ProgressDialog progressDialog = new ProgressDialog("Registering new User");
+                progressDialog.show();
+                
                 String[] params = {usernameField.getText(), passwordField.getText()};
                 ServerNegotiationTask task = new ServerNegotiationTask("addUser", params);
-                Future<String> result = pool.submit(task);
-                try {
-                    if (result.get().equals("success")) {
-                        HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
-                        primaryStage.setScene(homePage.getHomeScene());
-                        primaryStage.show();
-                        homePage.startRefreshTimers();
-                    }
-                    else if (result.get() == null) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Register Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error registering new User due to invalid input. Please try again.");
-                    alert.showAndWait();                
-                    }
-                    else { //IOException
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Connection Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error connecting to Server. Please try again.");
-                    alert.showAndWait();
-                    }
-                }
-                catch (InterruptedException | ExecutionException e) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Execution Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error has occured in proccessing your request. Please try again.");
-                    alert.showAndWait();  
-                }
+                ListenableFuture<String> result = pool.submit(task);
+                Futures.addCallback(
+                    result,
+                    new FutureCallback<String>() {
+                        @Override
+                        public void onSuccess(String response) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                completeRegistration(response, primaryStage, pool);
+                            });
+                        }
+                        @Override
+                        public void onFailure(Throwable thrown) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Execution Error");
+                                alert.setHeaderText(null);
+                                alert.setContentText("An error has occured in proccessing your request. Please try again.");
+                                alert.showAndWait();   
+                            });
+                        }
+                    },
+                    pool);
             }
             else {
                 alert = new Alert(AlertType.WARNING);
@@ -104,6 +103,29 @@ public class RegisterPage {
         grid.add(registerButton, 1, 3);
         
         registerScene = new Scene(grid, 400, 200);
+    }
+    
+    private void completeRegistration(String response, Stage primaryStage, ListeningExecutorService pool) {
+        Alert alert;
+        if ("success".equals(response)) {
+            LoginPage loginPage = new LoginPage(primaryStage, pool);
+            primaryStage.setScene(loginPage.getLoginScene());
+            primaryStage.show();
+        }
+        else if (response == null) {
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Register Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error registering new User due to invalid input. Please try again.");
+            alert.showAndWait();                
+        }
+        else { //IOException
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error connecting to Server. Please try again.");
+            alert.showAndWait();
+        }        
     }
 
     public Scene getRegisterScene() {

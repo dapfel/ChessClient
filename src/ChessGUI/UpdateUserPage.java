@@ -1,9 +1,11 @@
 package ChessGUI;
 
 import ChessGameLogic.ServerNegotiationTask;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -23,7 +25,7 @@ public class UpdateUserPage {
     
     private final Scene updateUserScene;
 
-    public UpdateUserPage(Stage primaryStage, ExecutorService pool) {
+    public UpdateUserPage(Stage primaryStage, ListeningExecutorService pool) {
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -60,42 +62,39 @@ public class UpdateUserPage {
         passwordLabel2.setLabelFor(passwordField2);
         grid.add(passwordField2, 1, 3);
 
-        Button registerButton = new Button("Submit");
-        registerButton.setOnMouseClicked(mouseEvent -> {
+        Button submitUpdateButton = new Button("Submit");
+        submitUpdateButton.setOnMouseClicked(mouseEvent -> {
             Alert alert;
-            if (passwordField.getText().equals(passwordField2.getText())) {
+            if (passwordField.getText().equals(passwordField2.getText())) {   
+                ProgressDialog progressDialog = new ProgressDialog("Updating User Profile");
+                progressDialog.show();
+                
                 String[] params = {usernameField.getText(), passwordField.getText()};
                 ServerNegotiationTask task = new ServerNegotiationTask("updateUser", params);
-                Future<String> result = pool.submit(task);
-                try {
-                    if (result.get().equals("success")) {
-                        HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
-                        primaryStage.setScene(homePage.getHomeScene());
-                        primaryStage.show();
-                        homePage.startRefreshTimers();
-                    }
-                    else if (result.get() == null) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Update User Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error updating the User due to invalid input. Please try again.");
-                    alert.showAndWait();                
-                    }
-                    else { //IOException
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Connection Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error connecting to Server. Please try again.");
-                    alert.showAndWait();
-                    }
-                }
-                catch (InterruptedException | ExecutionException e) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Execution Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error has occured in proccessing your request. Please try again.");
-                    alert.showAndWait();  
-                }
+                ListenableFuture<String> result = pool.submit(task);
+                Futures.addCallback(
+                    result,
+                    new FutureCallback<String>() {
+                        @Override
+                        public void onSuccess(String response) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                completeRegistration(response, primaryStage, pool);
+                            });
+                        }
+                        @Override
+                        public void onFailure(Throwable thrown) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Execution Error");
+                                alert.setHeaderText(null);
+                                alert.setContentText("An error has occured in proccessing your request. Please try again.");
+                                alert.showAndWait();   
+                            });
+                        }
+                    },
+                    pool);
             }
             else {
                 alert = new Alert(Alert.AlertType.WARNING);
@@ -105,9 +104,33 @@ public class UpdateUserPage {
                 alert.showAndWait();
             }
         });
-        grid.add(registerButton, 1, 3);
+        grid.add(submitUpdateButton, 1, 4);
         
         updateUserScene = new Scene(grid, 400, 200);
+    }
+    
+    private void completeRegistration(String response, Stage primaryStage, ListeningExecutorService pool) {
+        Alert alert;
+        if ("success".equals(response)) {
+            HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
+            primaryStage.setScene(homePage.getHomeScene());
+            primaryStage.show();
+            homePage.startRefreshTimers();
+        }
+        else if (response == null) {
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Update User Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error updating the User due to invalid input. Please try again.");
+            alert.showAndWait();                
+        }
+        else { //IOException
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error connecting to Server. Please try again.");
+            alert.showAndWait();
+        }        
     }
 
     public Scene getUpdateUserScene() {

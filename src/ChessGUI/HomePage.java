@@ -2,12 +2,14 @@ package ChessGUI;
 
 import ChessGameLogic.ServerNegotiationTask;
 import ServerAccess.User;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import java.util.Timer;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -35,18 +37,19 @@ public class HomePage {
     private ListView<String> availablePlayersList;
     private ListView<String> requestingPlayersList;
     private final Stage primaryStage;
-    private final ExecutorService pool;
-    PlayerListsRefresher playerListsRefresher;
-    AcceptedGameChecker acceptedGameChecker;
-    Timer timer1;
-    Timer timer2;
+    private final ListeningExecutorService pool;
+    private static PlayerListsRefresher playerListsRefresher;
+    private static AcceptedGameChecker acceptedGameChecker;
+    private static AcceptGameConfirmer gameConfirmer;
+    private static Timer timer1;
+    private static Timer timer2;
+    private static Timer timer3;
     
-    public HomePage(Stage primaryStage, ExecutorService pool, User user) {
+    public HomePage(Stage primaryStage, ListeningExecutorService pool, User user) {
         
         this.user = user;
         this.primaryStage = primaryStage;
         this.pool = pool;
-        reset("available"); // reset to no games or requests for the client user and that available
         
         BorderPane border = new BorderPane();
         border.setTop(TopButtonsHbox());
@@ -67,6 +70,7 @@ public class HomePage {
         logOutButton.setPrefSize(100, 20);
         logOutButton.setOnMouseClicked(mouseEvent -> {
             user = null;
+            stopRefreshTimers();
             reset("unavailable");
             Scene loginScene = new LoginPage(primaryStage, pool).getLoginScene();
             primaryStage.setScene(loginScene);
@@ -112,15 +116,25 @@ public class HomePage {
         availablePlayersList.setPrefWidth(70);
         availablePlayersList.setPrefHeight(150);
         availablePlayersList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        
-        try {           
-            Future<String> result = pool.submit(new ServerNegotiationTask("getAvailableUsers", new String[0]));
-            if (result.get().equals("success")) {
-                ObservableList<String> items = FXCollections.observableArrayList(result.get());
-                availablePlayersList.setItems(items);
-            }
-        }
-        catch (InterruptedException | ExecutionException e) {}      
+
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("getAvailableUsers", new String[0]));
+        Futures.addCallback(
+            result,
+            new FutureCallback<String>() {
+                @Override
+                public void onSuccess(String response) {
+                    Platform.runLater( () -> {
+                        if (response.equals("success")) {
+                            ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getAvailableUsers());
+                            availablePlayersList.setItems(items);
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Throwable thrown) {}
+                   
+            },
+            pool);     
         
         return availablePlayersList;
     }
@@ -131,14 +145,24 @@ public class HomePage {
         requestingPlayersList.setPrefHeight(150);
         requestingPlayersList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         
-        try {           
-            Future<String> result = pool.submit(new ServerNegotiationTask("getRequestingUsers", new String[0]));
-            if (result.get().equals("success")) {
-                ObservableList<String> items = FXCollections.observableArrayList(result.get());
-                requestingPlayersList.setItems(items);
-            }
-        }
-        catch (InterruptedException | ExecutionException e) {}      
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("getRequestingUsers", new String[0]));
+        Futures.addCallback(
+            result,
+            new FutureCallback<String>() {
+                @Override
+                public void onSuccess(String response) {
+                    Platform.runLater( () -> {
+                        if (response.equals("success")) {
+                            ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getRequestingUsers());
+                            requestingPlayersList.setItems(items);
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Throwable thrown) {}
+                   
+            },
+            pool);                  
         
         return requestingPlayersList;
     }
@@ -151,108 +175,175 @@ public class HomePage {
         Button requestGameButton = new Button("Request Game");
         requestGameButton.setPrefSize(100, 20);
         requestGameButton.setOnMouseClicked(mouseEvent -> {
-            String[] params = {availablePlayersList.getSelectionModel().getSelectedItem()};
-            Future<String> result = pool.submit(new ServerNegotiationTask("requestGame", params));
-            Alert alert;
-            try {
-                if (result.get().equals("success")) {
-                    availablePlayersList.getItems().remove(params[0]);                 
-                }
-                else {//IOException
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Connection Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error connecting to Server. Please try again.");
-                    alert.showAndWait();
-                }
-            }
-            catch (InterruptedException | ExecutionException e) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Execution Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error has occured in proccessing your request. Please try again.");
-                    alert.showAndWait();                 
-            }
+            String requestedPlayer = availablePlayersList.getSelectionModel().getSelectedItem();
+            ProgressDialog progressDialog = new ProgressDialog("Requesting game with " + requestedPlayer);
+            progressDialog.show();
+                   
+            String[] params = {requestedPlayer};
+            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("requestGame", params));
+            Futures.addCallback(
+                result,
+                new FutureCallback<String>() {
+                    @Override
+                    public void onSuccess(String response) {
+                        Platform.runLater( () -> {
+                            progressDialog.close();
+                            completeGameRequest(response, requestedPlayer, primaryStage, pool);
+                        });
+                    }
+                    @Override
+                    public void onFailure(Throwable thrown) {
+                        Platform.runLater( () -> {
+                            progressDialog.close();
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Execution Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText("An error has occured in proccessing your request. Please try again.");
+                            alert.showAndWait();   
+                        });
+                    }
+                },
+                pool);
         });
 
         Button acceptRequestButton = new Button("Accept Request");
         acceptRequestButton.setPrefSize(100, 20);
         acceptRequestButton.setOnMouseClicked(mouseEvent -> {
+            String requestingPlayer = requestingPlayersList.getSelectionModel().getSelectedItem();
+            ProgressDialog progressDialog = new ProgressDialog("Accepting game with " + requestingPlayer);
+            progressDialog.show();
+            
             stopRefreshTimers();
-            String[] params = {requestingPlayersList.getSelectionModel().getSelectedItem()};
-            Future<String> result = pool.submit(new ServerNegotiationTask("acceptGameRequest", params));
-            Alert alert;
-            try {
-                if (result.get().equals("success")) {  
-                    confirmAndStartGame();
-                }
-                else if (result.get().equals("IOException")) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Connection Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error connecting to Server. Please try again.");
-                    alert.showAndWait();
-                    startRefreshTimers();
-                }
-                else { // the game request no longer exists
-                    requestingPlayersList.getItems().remove(params[1]); 
-                    alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Player Unavailable");
-                    alert.setHeaderText(null);
-                    alert.setContentText("The request you have accepted is no longer available. Please accept a different game request.");
-                    alert.showAndWait();
-                    startRefreshTimers();
-                }      
-            }
-            catch (InterruptedException | ExecutionException e) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Execution Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error has occured in proccessing your request. Please try again.");
-                    alert.showAndWait();  
-                    startRefreshTimers();
-            }
+            String[] params = {requestingPlayer};
+            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("acceptGameRequest", params));
+            Futures.addCallback(
+                result,
+                new FutureCallback<String>() {
+                    @Override
+                    public void onSuccess(String response) {
+                        Platform.runLater( () -> {
+                            completeAcceptingGame(response, requestingPlayer, progressDialog);
+                        });
+                    }
+                    @Override
+                    public void onFailure(Throwable thrown) {
+                        Platform.runLater( () -> {
+                            progressDialog.close();
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Execution Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText("An error has occured in proccessing your request. Please try again.");
+                            alert.showAndWait();  
+                            startRefreshTimers();
+                        });
+                    }
+                },
+                pool);      
         });
         
         bottomButtonsHbox.getChildren().addAll(requestGameButton, acceptRequestButton);
         return bottomButtonsHbox;
    }
     
-    private void confirmAndStartGame() {
-        Timer timer = new Timer();
-        AcceptGameConfirmer gameConfirmer = new AcceptGameConfirmer(this, timer);
-        timer.schedule(gameConfirmer, 0, 5000);
-    }
-    
     public void startRefreshTimers() {
+        reset("available"); // reset to no games or requests for the client user and that available
         playerListsRefresher = new PlayerListsRefresher(this);
         acceptedGameChecker = new AcceptedGameChecker(this);
         timer1 = new Timer();
         timer2 = new Timer();
-        timer1.schedule(playerListsRefresher, 0, 5000);
-        timer2.schedule(acceptedGameChecker, 0, 5000);
+        timer1.schedule(playerListsRefresher, 5000, 5000);
+        timer2.schedule(acceptedGameChecker, 5000, 5000);
     }
     
-    public void stopRefreshTimers() {
-        acceptedGameChecker.cancel();
-        playerListsRefresher.cancel();
-        timer1.cancel();
-        timer2.cancel();
+    public static void stopRefreshTimers() {
+        if (timer1 != null && timer2 != null) {
+            timer1.cancel();
+            timer2.cancel();
+        }
+        if (timer3 != null) {
+            timer3.cancel();
+        }
     }
     
     public final void reset(String availability) {
-        try {
-            String[] params = {availability};
-            Future<String> result = pool.submit(new ServerNegotiationTask("reset", params));
-            if (!result.get().equals("success")) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Connection Error");
-                alert.setHeaderText(null);
-                alert.setContentText("Error connecting to Server. Available player and requests lists will not function properly.");
-                alert.showAndWait();
-            }
-            
-        } catch (InterruptedException | ExecutionException ex) {}
+        String[] params = {availability};
+        ProgressDialog progressDialog = new ProgressDialog("Initializing Home Page");
+        progressDialog.show();
+        
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("reset", params));
+        Futures.addCallback(
+            result,
+            new FutureCallback<String>() {
+                @Override
+                public void onSuccess(String response) {
+                    Platform.runLater( () -> {
+                        progressDialog.close();
+                        if (!"success".equals(response)) { //IOException
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Connection Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Error connecting to Server. Available player and requests lists will not function properly.");
+                            alert.showAndWait();
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Throwable thrown) {
+                    Platform.runLater( () -> {
+                        progressDialog.close();
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Execution Error");
+                        alert.setHeaderText(null);
+                        alert.setContentText("An error has occured in initializng the page. Available player and requests lists will not function properly.");
+                        alert.showAndWait();  
+                        startRefreshTimers();
+                    });
+                }
+            },
+            pool);
+    }
+    
+    private void completeGameRequest(String response, String requestedPlayer, Stage primaryStage, ListeningExecutorService pool) {
+        if ("success".equals(response)) {
+            availablePlayersList.getItems().remove(requestedPlayer);                 
+        }
+        else {//IOException
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error connecting to Server. Please try again.");
+            alert.showAndWait();
+        }
+    }
+    
+    private void completeAcceptingGame(String response, String requestingPlayer, ProgressDialog progressDialog) {
+        Alert alert;
+        if (response.equals("success")) { 
+            confirmAndStartGame(progressDialog);
+        }
+        else if (response.equals("IOException")) {
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error connecting to Server. Please try again.");
+            alert.showAndWait();
+            startRefreshTimers();
+        }
+        else { // the game request no longer exists
+            requestingPlayersList.getItems().remove(requestingPlayer); 
+            alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Player Unavailable");
+            alert.setHeaderText(null);
+            alert.setContentText("The request you have accepted is no longer available. Please accept a different game request.");
+            alert.showAndWait();
+            startRefreshTimers();
+        }        
+    }
+    
+    private void confirmAndStartGame(ProgressDialog progressDialog) {
+        timer3 = new Timer();
+        gameConfirmer = new AcceptGameConfirmer(this, timer3, progressDialog);
+        timer3.schedule(gameConfirmer, 1000, 5000);
     }
 
     public Scene getHomeScene() {
@@ -274,7 +365,7 @@ public class HomePage {
     public User getUser() {
         return user;
     }
-    public ExecutorService getPool() {
+    public ListeningExecutorService getPool() {
         return pool;
     }
 

@@ -2,9 +2,11 @@ package ChessGUI;
 
 import ChessGameLogic.SavedGame;
 import ChessGameLogic.ServerNegotiationTask;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -24,7 +26,7 @@ public class LoginPage {
     
     private final Scene loginScene;
     
-    public LoginPage(Stage primaryStage, ExecutorService pool) {
+    public LoginPage(Stage primaryStage, ListeningExecutorService pool) {
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -49,47 +51,43 @@ public class LoginPage {
 
         Button signInButton = new Button("Sign In");
         signInButton.setOnMouseClicked(mouseEvent -> {
-            String[] params = {usernameField.getText(), passwordField.getText()};
-            ServerNegotiationTask task = new ServerNegotiationTask("signIn", params);
-            Future<String> result = pool.submit(task);
-            Alert alert;
-            try {
-                if (result.get().equals("success")) {
-                    SavedGame savedGame = ChessClient.getSavedGame();
-                    if (savedGame != null) { // load a saved game if exists
-                        ServerNegotiationTask.setOpponent(savedGame.getOpponent());
-                        ServerNegotiationTask.setGame(savedGame.getGame());
-                        GamePage gamePage = new GamePage(primaryStage, pool, savedGame.getChessGame());
-                        primaryStage.setScene(gamePage.getGameScene());
-                    }
-                    else { // no saved game. go to Home page
-                        HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
-                        primaryStage.setScene(homePage.getHomeScene());
-                        primaryStage.show();
-                        homePage.startRefreshTimers();
-                    }
-                }
-                else if (result.get() == null) {
-                    alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Invalid Input");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Invalid username or password. Please try again.");
-                    alert.showAndWait();
-                }
-                else {//IOException
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Connection Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Error connecting to Server. Please try again.");
-                    alert.showAndWait();
-                }
+            if (!usernameField.getText().equals("") && !passwordField.getText().equals("")) {
+                ProgressDialog progressDialog = new ProgressDialog("Signing In");
+                progressDialog.show();
+                
+                String[] params = {usernameField.getText(), passwordField.getText()};
+                ServerNegotiationTask task = new ServerNegotiationTask("signIn", params);
+                ListenableFuture<String> result = pool.submit(task);
+                Futures.addCallback(
+                    result,
+                    new FutureCallback<String>() {
+                        @Override
+                        public void onSuccess(String response) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                completeSignIn(response, primaryStage, pool);
+                            });
+                        }
+                        @Override
+                        public void onFailure(Throwable thrown) {
+                            Platform.runLater( () -> {
+                                progressDialog.close();
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Execution Error");
+                                alert.setHeaderText(null);
+                                alert.setContentText("An error has occured in proccessing your request. Please try again.");
+                                alert.showAndWait();    
+                            });
+                        }
+                    },
+                    pool);
             }
-            catch (InterruptedException | ExecutionException e) {
-                    alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Execution Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("An error has occured in proccessing your request. Please try again.");
-                    alert.showAndWait();                 
+            else { // username or password field is empty
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Invalid Input");
+                alert.setHeaderText(null);
+                alert.setContentText("Invalid username or password. Please try again.");
+                alert.showAndWait();
             }
         });
         
@@ -104,6 +102,39 @@ public class LoginPage {
         grid.add(registerButton, 1, 3);
         
         loginScene = new Scene(grid, 400, 200);
+    }
+    
+    private void completeSignIn(String response, Stage primaryStage, ListeningExecutorService pool) {
+        Alert alert;
+        if ("success".equals(response)) {
+            SavedGame savedGame = ChessClientApp.getSavedGame();
+            if (savedGame != null) { // load a saved game if exists
+                ServerNegotiationTask.setOpponent(savedGame.getOpponent());
+                ServerNegotiationTask.setGame(savedGame.getGame());
+                GamePage gamePage = new GamePage(primaryStage, pool, savedGame.getChessGame());
+                primaryStage.setScene(gamePage.getGameScene());
+            }
+            else { // no saved game. go to Home page
+                HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
+                primaryStage.setScene(homePage.getHomeScene());
+                primaryStage.show();
+                homePage.startRefreshTimers();
+            }
+        }
+        else if (response == null) {
+            alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Invalid Input");
+            alert.setHeaderText(null);
+            alert.setContentText("Invalid username or password. Please try again.");
+            alert.showAndWait();
+        }
+        else {//IOException
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error connecting to Server. Please try again.");
+            alert.showAndWait();
+        }
     }
 
     public Scene getLoginScene() {

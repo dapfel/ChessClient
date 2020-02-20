@@ -26,15 +26,17 @@ public class AcceptedGameChecker extends TimerTask {
         try {
             ServerNegotiationTask checkForAcceptedTask = new ServerNegotiationTask("whiteStartGame", new String[0]);
             Future<String> result = homePage.getPool().submit(checkForAcceptedTask);
-        
-            if (result.get().equals("success")) {
-                homePage.stopRefreshTimers();
+            String response = result.get();
+            if ("success".equals(response)) {
+                HomePage.stopRefreshTimers();
                 GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame(PlayerColor.WHITE));
                 Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
             }
-            if (result.get().equals("IOException")) {
-                Platform.runLater(() -> homePage.reset("onlyAvailable"));
-            }
+            if ("IOException".equals(response)) {
+                Platform.runLater(() -> {     
+                    homePage.reset("onlyAvailable");
+                });
+            } 
         }
         catch (InterruptedException | ExecutionException e) {}
     }

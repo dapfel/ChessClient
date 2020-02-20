@@ -38,8 +38,8 @@ public class ChessServerService {
      *         returns null if invalid input (such as if a user already exists for the given username)
      * @throws IOException if there is a error in connecting to the server
      */
-    public User addUser(User user) throws IOException {
-        String url = BASE_URL + "user";
+    public User addUser(User user, String password) throws IOException {
+        String url = BASE_URL + "user/" + password;
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
         InputStreamReader reader = null;
@@ -72,8 +72,8 @@ public class ChessServerService {
      *         returns null if user doesn't exist or if invalid input
      * @throws IOException if error in connection to the server
      */
-    public User updateUser(int userID, User newUser) throws IOException {
-        String url = BASE_URL + "user/update/" + userID;
+    public User updateUser(int userID, String newPassword, User newUser) throws IOException {
+        String url = BASE_URL + "user/update/" + userID + "/" + newPassword;
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
         InputStreamReader reader = null;
@@ -82,7 +82,7 @@ public class ChessServerService {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json;");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Method", "PUT");
+            connection.setRequestProperty("Method", "POST");
             writer = new OutputStreamWriter(connection.getOutputStream());
             writer.write(new Gson().toJson(newUser));
             writer.flush();
@@ -105,11 +105,10 @@ public class ChessServerService {
      * @return list of usernames of available users.
      * @throws IOException if there is a error in connecting to the server
      */
-    public UsernameList getAvailableUsers(String username) throws IOException {
+    public UsernameList getAvailableUsers() throws IOException {
         String url = BASE_URL + "user/availableUsers/";
         try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
             UsernameList availableUsers = new Gson().fromJson(reader, UsernameList.class);
-            availableUsers.remove(username);
             return availableUsers;
         }
         catch(IOException e) {
@@ -139,7 +138,7 @@ public class ChessServerService {
      *         returns null if either user doesn't exist or is unavailable
      * @throws IOException if there is a error in connecting to the server
      */
-    public Gamerequest makeGameRequest(Gamerequest request) throws IOException {
+    public GameRequest makeGameRequest(GameRequest request) throws IOException {
         String url = BASE_URL + "gameRequest";
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
@@ -155,7 +154,7 @@ public class ChessServerService {
             writer.flush();
 
             reader = new InputStreamReader(connection.getInputStream());
-            request = new Gson().fromJson(reader, Gamerequest.class);
+            request = new Gson().fromJson(reader, GameRequest.class);
             reader.close();
             return request;
         }
@@ -173,7 +172,7 @@ public class ChessServerService {
      *         returns null if user no longer available of if invalid input
      * @throws IOException if error in connection to the server
      */
-    public Game acceptGameRequest(Gamerequest request) throws IOException {
+    public Game acceptGameRequest(GameRequest request) throws IOException {
         String url = BASE_URL + "gameRequest/accept";
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
@@ -183,7 +182,7 @@ public class ChessServerService {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json;");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Method", "PUT");
+            connection.setRequestProperty("Method", "POST");
             writer = new OutputStreamWriter(connection.getOutputStream());
             writer.write(new Gson().toJson(request));
             writer.flush();
@@ -207,10 +206,10 @@ public class ChessServerService {
      *         returns null if invalid input
      * @throws IOException if there is a error in connecting to the server
      */
-    public Gamerequest whiteStartGame(String username) throws IOException {
-        String url = BASE_URL + "gameRequest/whiteStartGame/" + username;
+    public GameRequest whiteStartGame(int userID) throws IOException {
+        String url = BASE_URL + "gameRequest/whiteStartGame/" + userID;
         try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
-            Gamerequest gameRequest = new Gson().fromJson(reader, Gamerequest.class);
+            GameRequest gameRequest = new Gson().fromJson(reader, GameRequest.class);
             return gameRequest; //gameID of the request will be 0 if no requests accepted
         }
         catch(IOException e) {
@@ -224,7 +223,7 @@ public class ChessServerService {
      *         returns null if user no longer available of if invalid input
      * @throws IOException if error in connection to the server
      */
-    public Game blackStartGame(Gamerequest request) throws IOException {
+    public Game blackStartGame(GameRequest request) throws IOException {
         String url = BASE_URL + "gameRequest/blackStartGame";
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
@@ -234,7 +233,7 @@ public class ChessServerService {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json;");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Method", "PUT");
+            connection.setRequestProperty("Method", "POST");
             writer = new OutputStreamWriter(connection.getOutputStream());
             writer.write(new Gson().toJson(request));
             writer.flush();
@@ -275,8 +274,8 @@ public class ChessServerService {
      *         returns null if game doesn't exist
      * @throws IOException if error in connection to the server
      */
-    public String makeMove(String move) throws IOException {
-        String url = BASE_URL + "game/makeMove/" + move;
+    public String makeMove(int gameID, String move) throws IOException {
+        String url = BASE_URL + "game/makeMove/" + gameID;
         HttpURLConnection connection = null;
         OutputStreamWriter writer = null;
         InputStreamReader reader = null;
@@ -285,7 +284,7 @@ public class ChessServerService {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json;");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Method", "PUT");
+            connection.setRequestProperty("Method", "POST");
             writer = new OutputStreamWriter(connection.getOutputStream());
             writer.write(new Gson().toJson(move));
             writer.flush();
