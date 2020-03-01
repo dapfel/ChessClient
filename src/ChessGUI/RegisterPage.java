@@ -1,5 +1,6 @@
 package ChessGUI;
 
+import ChessGUI.ChessClientApp.Page;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -11,7 +12,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -25,8 +27,14 @@ import javafx.application.Platform;
 public class RegisterPage {
     
     private final Scene registerScene;
+    private static ListeningExecutorService pool;
+    private static Stage primaryStage;
     
-    public RegisterPage(Stage primaryStage, ListeningExecutorService pool) {
+    public RegisterPage() {
+        ChessClientApp.setCurrentPage(Page.REGISTER);
+        pool = ChessClientApp.getPool();
+        primaryStage = ChessClientApp.getPrimaryStage();
+        
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -66,7 +74,7 @@ public class RegisterPage {
                 progressDialog.show();
                 
                 String[] params = {usernameField.getText(), passwordField.getText()};
-                ServerNegotiationTask task = new ServerNegotiationTask("addUser", params);
+                ServerNegotiationTask task = new ServerNegotiationTask(Task.ADD_USER, params);
                 ListenableFuture<String> result = pool.submit(task);
                 Futures.addCallback(
                     result,
@@ -108,11 +116,11 @@ public class RegisterPage {
     private void completeRegistration(String response, Stage primaryStage, ListeningExecutorService pool) {
         Alert alert;
         if ("success".equals(response)) {
-            LoginPage loginPage = new LoginPage(primaryStage, pool);
+            LoginPage loginPage = new LoginPage();
             primaryStage.setScene(loginPage.getLoginScene());
             primaryStage.show();
         }
-        else if (response == null) {
+        else if (response.equals("failure")) {
             alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Register Error");
             alert.setHeaderText(null);

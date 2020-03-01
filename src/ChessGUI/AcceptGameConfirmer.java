@@ -2,7 +2,8 @@ package ChessGUI;
 
 import ChessGameLogic.ChessGame;
 import ChessGameLogic.ChessGame.PlayerColor;
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -36,7 +37,7 @@ public class AcceptGameConfirmer extends TimerTask {
     
     @Override
     public void run() { 
-        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("blackStartGame", null));
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.BLACK_START_GAME, null));
         Futures.addCallback(
             result,
             new FutureCallback<String>() {
@@ -61,7 +62,7 @@ public class AcceptGameConfirmer extends TimerTask {
     private void completeAcceptingGame(String response, ProgressDialog progressDialog) {
             if ("success".equals(response)) {
                 timer.cancel();
-                GamePage gamePage = new GamePage(homePage.getPrimaryStage(), pool, new ChessGame(PlayerColor.BLACK));
+                GamePage gamePage = new GamePage(new ChessGame(PlayerColor.BLACK));
                 Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
             }
             else { // opponent has not confirmed this game request yet

@@ -1,6 +1,8 @@
 package ChessGUI;
 
-import ChessGameLogic.ServerNegotiationTask;
+import ChessGUI.ChessClientApp.Page;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -24,8 +26,14 @@ import javafx.stage.Stage;
 public class UpdateUserPage {
     
     private final Scene updateUserScene;
+    private static ListeningExecutorService pool;
+    private static Stage primaryStage;
 
-    public UpdateUserPage(Stage primaryStage, ListeningExecutorService pool) {
+    public UpdateUserPage() {
+        ChessClientApp.setCurrentPage(Page.UPDATE_USER);
+        pool = ChessClientApp.getPool();
+        primaryStage = ChessClientApp.getPrimaryStage();
+        
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -65,12 +73,20 @@ public class UpdateUserPage {
         Button submitUpdateButton = new Button("Submit");
         submitUpdateButton.setOnMouseClicked(mouseEvent -> {
             Alert alert;
-            if (passwordField.getText().equals(passwordField2.getText())) {   
+            if (passwordField.getText().equals(passwordField2.getText())) {  
+                String newUsername = usernameField.getText(); 
+                String newPassword = passwordField.getText();
+                if (newUsername == null || newUsername.trim().isEmpty()) {
+                    newUsername = null;
+                }
+                if (newPassword == null || newPassword.trim().isEmpty()) {
+                    newPassword = null;
+                }
                 ProgressDialog progressDialog = new ProgressDialog("Updating User Profile");
                 progressDialog.show();
                 
-                String[] params = {usernameField.getText(), passwordField.getText()};
-                ServerNegotiationTask task = new ServerNegotiationTask("updateUser", params);
+                String[] params = {newUsername, newPassword};
+                ServerNegotiationTask task = new ServerNegotiationTask(Task.UPDATE_USER, params);
                 ListenableFuture<String> result = pool.submit(task);
                 Futures.addCallback(
                     result,
@@ -112,7 +128,7 @@ public class UpdateUserPage {
     private void completeRegistration(String response, Stage primaryStage, ListeningExecutorService pool) {
         Alert alert;
         if ("success".equals(response)) {
-            HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
+            HomePage homePage = new HomePage(ServerNegotiationTask.getUser());
             primaryStage.setScene(homePage.getHomeScene());
             primaryStage.show();
             homePage.startRefreshTimers();

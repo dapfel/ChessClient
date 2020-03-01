@@ -1,7 +1,8 @@
 package ChessGUI;
 
 import ChessGameLogic.SavedGame;
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.FileInputStream;
@@ -19,21 +20,30 @@ import javafx.stage.Stage;
  */
 public class ChessClientApp extends Application {
     
+    public enum Page {LOGIN, REGISTER, HOME, UPDATE_USER, GAME}
+    
     private static SavedGame savedGame; // to save/load a game to/from the computer when program not running
-    private ListeningExecutorService pool;
+    private static ListeningExecutorService pool;
+    private static Stage primaryStage;
+    private static Page currentPage;
     
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Internet Chess Game");
+        ChessClientApp.primaryStage = primaryStage;       
         pool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        
         ProgressDialog.setPrimaryStage(primaryStage);
-        LoginPage loginPage = new LoginPage(primaryStage, pool);
-            
+        LoginPage loginPage = new LoginPage();
+        primaryStage.setTitle("Internet Chess Game");    
+        
         primaryStage.setOnCloseRequest( event -> {   
-        if (savedGame != null)
-            saveGame();
         setUnavailable();
-        HomePage.stopRefreshTimers();
+        if (currentPage == Page.HOME) {
+            HomePage.stopRefreshTimers();
+        }
+        if (currentPage == Page.GAME) {
+             saveGame();  
+        }
         pool.shutdown();
         }); 
         
@@ -48,7 +58,7 @@ public class ChessClientApp extends Application {
     
     private static void saveGame() {
         try {
-            FileOutputStream fileOut = new FileOutputStream("C:\\Users\\user\\Desktop\\savedGame");
+            FileOutputStream fileOut = new FileOutputStream("/SavedGame");
             try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
                 objectOut.writeObject(savedGame);
             } 
@@ -58,20 +68,32 @@ public class ChessClientApp extends Application {
     
     private static void loadGame() {
         try {
-            FileInputStream fileIn = new FileInputStream("C:\\Users\\user\\Desktop\\savedGame");
+            FileInputStream fileIn = new FileInputStream("/SavedGame");
             ObjectInputStream objectIn = new ObjectInputStream(fileIn);
             savedGame = (SavedGame) objectIn.readObject();
         } 
         catch (IOException | ClassNotFoundException e) {}
     }
-
-    public static SavedGame getSavedGame() {
-        return savedGame;
-    }
     
     private void setUnavailable() {
         String[] params = {"unavailable"};
-        ServerNegotiationTask task = new ServerNegotiationTask("reset", params);
+        ServerNegotiationTask task = new ServerNegotiationTask(Task.RESET, params);
         pool.submit(task);
+    }
+
+    public static ListeningExecutorService getPool() {
+        return pool;
+    }
+
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public static void setCurrentPage(Page currentPage) {
+        ChessClientApp.currentPage = currentPage;
+    }
+    
+    public static SavedGame getSavedGame() {
+        return savedGame;
     }
 }

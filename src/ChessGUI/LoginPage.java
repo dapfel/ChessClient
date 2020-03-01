@@ -1,7 +1,9 @@
 package ChessGUI;
 
+import ChessGUI.ChessClientApp.Page;
 import ChessGameLogic.SavedGame;
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -25,8 +27,14 @@ import javafx.stage.Stage;
 public class LoginPage {
     
     private final Scene loginScene;
+    private static ListeningExecutorService pool;
+    private static Stage primaryStage;
     
-    public LoginPage(Stage primaryStage, ListeningExecutorService pool) {
+    public LoginPage() {
+        ChessClientApp.setCurrentPage(Page.LOGIN);
+        pool = ChessClientApp.getPool();
+        primaryStage = ChessClientApp.getPrimaryStage();
+        
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(12,12,12,12));
         grid.setMinSize(400,200);
@@ -56,7 +64,7 @@ public class LoginPage {
                 progressDialog.show();
                 
                 String[] params = {usernameField.getText(), passwordField.getText()};
-                ServerNegotiationTask task = new ServerNegotiationTask("signIn", params);
+                ServerNegotiationTask task = new ServerNegotiationTask(Task.SIGN_IN, params);
                 ListenableFuture<String> result = pool.submit(task);
                 Futures.addCallback(
                     result,
@@ -65,7 +73,7 @@ public class LoginPage {
                         public void onSuccess(String response) {
                             Platform.runLater( () -> {
                                 progressDialog.close();
-                                completeSignIn(response, primaryStage, pool);
+                                completeSignIn(response);
                             });
                         }
                         @Override
@@ -95,7 +103,7 @@ public class LoginPage {
         
         Button registerButton = new Button("Register");
         registerButton.setOnMouseClicked(mouseEvent -> {
-            Scene registerScene = new RegisterPage(primaryStage, pool).getRegisterScene();
+            Scene registerScene = new RegisterPage().getRegisterScene();
             primaryStage.setScene(registerScene);
             primaryStage.show();
         });
@@ -104,24 +112,24 @@ public class LoginPage {
         loginScene = new Scene(grid, 400, 200);
     }
     
-    private void completeSignIn(String response, Stage primaryStage, ListeningExecutorService pool) {
+    private void completeSignIn(String response) {
         Alert alert;
         if ("success".equals(response)) {
             SavedGame savedGame = ChessClientApp.getSavedGame();
             if (savedGame != null) { // load a saved game if exists
                 ServerNegotiationTask.setOpponent(savedGame.getOpponent());
                 ServerNegotiationTask.setGame(savedGame.getGame());
-                GamePage gamePage = new GamePage(primaryStage, pool, savedGame.getChessGame());
+                GamePage gamePage = new GamePage(savedGame.getChessGame());
                 primaryStage.setScene(gamePage.getGameScene());
             }
             else { // no saved game. go to Home page
-                HomePage homePage = new HomePage(primaryStage, pool, ServerNegotiationTask.getUser());
+                HomePage homePage = new HomePage(ServerNegotiationTask.getUser());
                 primaryStage.setScene(homePage.getHomeScene());
                 primaryStage.show();
                 homePage.startRefreshTimers();
             }
         }
-        else if (response == null) {
+        else if (response.equals("failure")) {
             alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Invalid Input");
             alert.setHeaderText(null);

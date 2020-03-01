@@ -1,12 +1,13 @@
 package ChessGameLogic;
 
 import ServerAccess.Game;
+import java.io.Serializable;
 
 /**
  *
  * @author dapfel
  */
-public class SavedGame {
+public class SavedGame implements Serializable {
     
     private final ChessGame chessGame;
     private final Game game;

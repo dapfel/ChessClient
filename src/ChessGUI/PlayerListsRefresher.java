@@ -1,6 +1,7 @@
 package ChessGUI;
 
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -27,7 +28,7 @@ public class PlayerListsRefresher extends TimerTask {
         ListView availablePlayersList = homePage.getAvailablePlayersList();
         String[] params = {homePage.getUser().getUsername()};
         try {           
-            Future<String> result = homePage.getPool().submit(new ServerNegotiationTask("getAvailableUsers", params));
+            Future<String> result = homePage.getPool().submit(new ServerNegotiationTask(Task.GET_AVAILABLE_USERS, params));
             if (result.get().equals("success")) {
                 ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getAvailableUsers());
                 Platform.runLater(() -> availablePlayersList.setItems(items));
@@ -37,7 +38,7 @@ public class PlayerListsRefresher extends TimerTask {
             
         ListView requestingPlayersList = homePage.getRequestingPlayersList();
         try {           
-            Future<String> result = homePage.getPool().submit(new ServerNegotiationTask("getRequestingUsers", params));
+            Future<String> result = homePage.getPool().submit(new ServerNegotiationTask(Task.GET_REQUESTING_USERS, params));
             if (result.get().equals("success")) {
                 ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getRequestingUsers());
                 Platform.runLater(() -> requestingPlayersList.setItems(items));

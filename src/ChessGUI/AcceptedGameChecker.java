@@ -1,12 +1,13 @@
 package ChessGUI;
 
 import ChessGameLogic.ChessGame;
-import ChessGameLogic.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import javafx.application.Platform;
 import ChessGameLogic.ChessGame.PlayerColor;
+import ServerAccess.ServerNegotiationTask.Task;
 
 /**
  *
@@ -24,12 +25,12 @@ public class AcceptedGameChecker extends TimerTask {
     public void run() {
         
         try {
-            ServerNegotiationTask checkForAcceptedTask = new ServerNegotiationTask("whiteStartGame", new String[0]);
+            ServerNegotiationTask checkForAcceptedTask = new ServerNegotiationTask(Task.WHITE_START_GAME, new String[0]);
             Future<String> result = homePage.getPool().submit(checkForAcceptedTask);
             String response = result.get();
             if ("success".equals(response)) {
                 HomePage.stopRefreshTimers();
-                GamePage gamePage = new GamePage(homePage.getPrimaryStage(), homePage.getPool(), new ChessGame(PlayerColor.WHITE));
+                GamePage gamePage = new GamePage(new ChessGame(PlayerColor.WHITE));
                 Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
             }
             if ("IOException".equals(response)) {

@@ -1,14 +1,14 @@
 package ChessGUI;
 
-import ChessGameLogic.ServerNegotiationTask;
+import ChessGUI.ChessClientApp.Page;
+import ServerAccess.ServerNegotiationTask;
+import ServerAccess.ServerNegotiationTask.Task;
 import ServerAccess.User;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import java.util.Timer;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,7 +19,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -45,42 +44,44 @@ public class HomePage {
     private static Timer timer2;
     private static Timer timer3;
     
-    public HomePage(Stage primaryStage, ListeningExecutorService pool, User user) {
-        
+    public HomePage(User user) {
+        ChessClientApp.setCurrentPage(Page.HOME);
         this.user = user;
-        this.primaryStage = primaryStage;
-        this.pool = pool;
+        pool = ChessClientApp.getPool();
+        primaryStage = ChessClientApp.getPrimaryStage();
         
-        BorderPane border = new BorderPane();
-        border.setTop(TopButtonsHbox());
-        border.setLeft(UserDetailsVbox());
-        border.setCenter(AvailablePlayersList());
-        border.setRight(RequestingPlayersList());
-        border.setBottom(BottomButtonsHbox());
+        VBox vBox = new VBox();    
+        vBox.setPadding(new Insets(10));
+        vBox.setSpacing(8);
+        HBox hBox = new HBox();
+        hBox.setPadding(new Insets(15, 12, 15, 12));
+        hBox.setSpacing(10);
+        hBox.getChildren().addAll(userDetailsVbox(), availablePlayersVbox(), requestingPlayersVbox());
+        vBox.getChildren().addAll(topButtonsHbox(), hBox);
         
-        homeScene = new Scene(border, 600, 300);
+        homeScene = new Scene(vBox, 600, 300);
     }
     
-    private HBox TopButtonsHbox() {
+    private HBox topButtonsHbox() {
         HBox topButtonsHbox = new HBox();
         topButtonsHbox.setPadding(new Insets(15, 12, 15, 12));
         topButtonsHbox.setSpacing(10);
 
         Button logOutButton = new Button("Log Out");
-        logOutButton.setPrefSize(100, 20);
+        logOutButton.setPrefSize(200, 20);
         logOutButton.setOnMouseClicked(mouseEvent -> {
             user = null;
             stopRefreshTimers();
             reset("unavailable");
-            Scene loginScene = new LoginPage(primaryStage, pool).getLoginScene();
+            Scene loginScene = new LoginPage().getLoginScene();
             primaryStage.setScene(loginScene);
             primaryStage.show();
         });
         
         Button updateUserButton = new Button("Update User Profile");
-        updateUserButton.setPrefSize(100, 20);
+        updateUserButton.setPrefSize(200, 20);
         updateUserButton.setOnMouseClicked(mouseEvent -> {
-            Scene updateUserScene = new UpdateUserPage(primaryStage, pool).getUpdateUserScene();
+            Scene updateUserScene = new UpdateUserPage().getUpdateUserScene();
             primaryStage.setScene(updateUserScene);
             primaryStage.show();
         });
@@ -89,7 +90,7 @@ public class HomePage {
         return topButtonsHbox;
    }
     
-    private VBox UserDetailsVbox() {
+    private VBox userDetailsVbox() {
         VBox userDetailsVbox = new VBox();
         userDetailsVbox.setPadding(new Insets(10));
         userDetailsVbox.setSpacing(8);
@@ -111,13 +112,15 @@ public class HomePage {
         return userDetailsVbox;
     }
     
-    private ListView<String> AvailablePlayersList() {
+    private VBox availablePlayersVbox() {
+        VBox availablePlayersVbox = new VBox();
+        Label availablePlayersLabel = new Label("Available Players");
+        
         availablePlayersList = new ListView<>();
-        availablePlayersList.setPrefWidth(70);
-        availablePlayersList.setPrefHeight(150);
+        availablePlayersList.setPrefWidth(100);
+        availablePlayersList.setPrefHeight(200);
         availablePlayersList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-
-        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("getAvailableUsers", new String[0]));
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.GET_AVAILABLE_USERS, new String[0]));
         Futures.addCallback(
             result,
             new FutureCallback<String>() {
@@ -134,43 +137,7 @@ public class HomePage {
                 public void onFailure(Throwable thrown) {}
                    
             },
-            pool);     
-        
-        return availablePlayersList;
-    }
-    
-    private ListView<String> RequestingPlayersList() {
-        requestingPlayersList = new ListView<>();
-        requestingPlayersList.setPrefWidth(70);
-        requestingPlayersList.setPrefHeight(150);
-        requestingPlayersList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        
-        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("getRequestingUsers", new String[0]));
-        Futures.addCallback(
-            result,
-            new FutureCallback<String>() {
-                @Override
-                public void onSuccess(String response) {
-                    Platform.runLater( () -> {
-                        if (response.equals("success")) {
-                            ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getRequestingUsers());
-                            requestingPlayersList.setItems(items);
-                        }
-                    });
-                }
-                @Override
-                public void onFailure(Throwable thrown) {}
-                   
-            },
-            pool);                  
-        
-        return requestingPlayersList;
-    }
-    
-    private HBox BottomButtonsHbox() {
-        HBox bottomButtonsHbox = new HBox();
-        bottomButtonsHbox.setPadding(new Insets(15, 12, 15, 12));
-        bottomButtonsHbox.setSpacing(10);
+            pool);  
         
         Button requestGameButton = new Button("Request Game");
         requestGameButton.setPrefSize(100, 20);
@@ -180,9 +147,9 @@ public class HomePage {
             progressDialog.show();
                    
             String[] params = {requestedPlayer};
-            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("requestGame", params));
+            ListenableFuture<String> result1 = pool.submit(new ServerNegotiationTask(Task.REQUEST_GAME, params));
             Futures.addCallback(
-                result,
+                result1,
                 new FutureCallback<String>() {
                     @Override
                     public void onSuccess(String response) {
@@ -205,7 +172,39 @@ public class HomePage {
                 },
                 pool);
         });
-
+        
+        availablePlayersVbox.getChildren().addAll(availablePlayersLabel, availablePlayersList, requestGameButton);
+        return availablePlayersVbox;
+    }
+    
+    private VBox requestingPlayersVbox() {
+        VBox requestingPlayersVbox = new VBox();
+        Label requestingPlayersLabel = new Label("Requesting Players");
+        
+        requestingPlayersList = new ListView<>();
+        requestingPlayersList.setPrefWidth(100);
+        requestingPlayersList.setPrefHeight(200);
+        requestingPlayersList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.GET_REQUESTING_USERS, new String[0]));
+        Futures.addCallback(
+            result,
+            new FutureCallback<String>() {
+                @Override
+                public void onSuccess(String response) {
+                    Platform.runLater( () -> {
+                        if (response.equals("success")) {
+                            ObservableList<String> items = FXCollections.observableArrayList(ServerNegotiationTask.getRequestingUsers());
+                            requestingPlayersList.setItems(items);
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Throwable thrown) {}
+                   
+            },
+            pool);       
+        
         Button acceptRequestButton = new Button("Accept Request");
         acceptRequestButton.setPrefSize(100, 20);
         acceptRequestButton.setOnMouseClicked(mouseEvent -> {
@@ -215,9 +214,9 @@ public class HomePage {
             
             stopRefreshTimers();
             String[] params = {requestingPlayer};
-            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("acceptGameRequest", params));
+            ListenableFuture<String> result1 = pool.submit(new ServerNegotiationTask(Task.ACCEPT_GAME_REQUEST, params));
             Futures.addCallback(
-                result,
+                result1,
                 new FutureCallback<String>() {
                     @Override
                     public void onSuccess(String response) {
@@ -241,10 +240,10 @@ public class HomePage {
                 pool);      
         });
         
-        bottomButtonsHbox.getChildren().addAll(requestGameButton, acceptRequestButton);
-        return bottomButtonsHbox;
-   }
-    
+        requestingPlayersVbox.getChildren().addAll(requestingPlayersLabel, requestingPlayersList, acceptRequestButton);
+        return requestingPlayersVbox;
+    }
+   
     public void startRefreshTimers() {
         reset("available"); // reset to no games or requests for the client user and that available
         playerListsRefresher = new PlayerListsRefresher(this);
@@ -256,13 +255,18 @@ public class HomePage {
     }
     
     public static void stopRefreshTimers() {
-        if (timer1 != null && timer2 != null) {
-            timer1.cancel();
-            timer2.cancel();
-        }
-        if (timer3 != null) {
-            timer3.cancel();
-        }
+            if (timer1 != null) {
+                playerListsRefresher.cancel();
+                timer1.cancel();
+            }
+            if (timer2 != null) {
+                acceptedGameChecker.cancel();
+                timer2.cancel();
+            }
+            if (timer3 != null) {
+                gameConfirmer.cancel();
+                timer3.cancel();
+            }
     }
     
     public final void reset(String availability) {
@@ -270,7 +274,7 @@ public class HomePage {
         ProgressDialog progressDialog = new ProgressDialog("Initializing Home Page");
         progressDialog.show();
         
-        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask("reset", params));
+        ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.RESET, params));
         Futures.addCallback(
             result,
             new FutureCallback<String>() {

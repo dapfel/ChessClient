@@ -1,6 +1,5 @@
-package ChessGameLogic;
+package ServerAccess;
 
-import ServerAccess.*;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
@@ -10,8 +9,12 @@ import java.util.concurrent.Callable;
  */
 public class ServerNegotiationTask implements Callable<String> {
     
+    public enum Task {SIGN_IN, UPDATE_USER, ADD_USER, GET_AVAILABLE_USERS, GET_REQUESTING_USERS, 
+                     REQUEST_GAME, WHITE_START_GAME, ACCEPT_GAME_REQUEST, BLACK_START_GAME, MAKE_MOVE,
+                     GET_LAST_MOVE, END_GAME, RESET}
+    
     private final ChessServerService service;
-    private final String task;
+    private final Task task;
     private final String[] params;
     private static User user; // the client User
     private static String opponent; // opponent player's username
@@ -20,10 +23,15 @@ public class ServerNegotiationTask implements Callable<String> {
     private static UsernameList requestedUsers; // users already requested by client 
     private static GameRequest gameRequest;
     private static Game game;
+    private static String lastMove;
     
-    public ServerNegotiationTask(String task, String[] params) {
+    public ServerNegotiationTask(Task task, String[] params) {
         this.task = task;
         this.params = params;
+        if (ServerNegotiationTask.availableUsers == null)
+            availableUsers = new UsernameList();
+        if (ServerNegotiationTask.requestingUsers == null)
+            requestingUsers = new UsernameList();
         if (ServerNegotiationTask.requestedUsers == null)
             requestedUsers = new UsernameList();
         service = new ChessServerService();
@@ -33,27 +41,27 @@ public class ServerNegotiationTask implements Callable<String> {
     public String call(){  
         try {
             switch (task) {
-                case "signIn":
+                case SIGN_IN:
                     user = service.validateSignIn(params[0], params[1]); 
                     if (user != null) 
                         return "success"; 
                     break;
                    
-                case "updateUser":
+                case UPDATE_USER:
                     // params[0] is new Username, params[1] is new password
-                    user = service.updateUser(user.getUserID(), params[1], new User(params[0]));
-                    if (user != null) 
-                        return "success";
-                    break;
+                    User tempUser = service.updateUser(user.getUserID(), params[1], new User(params[0]));
+                    if (tempUser != null)
+                            user = tempUser;
+                    return "success";
                    
-                case "addUser":
+                case ADD_USER:
                     // params[0] is username, params[1] is password
                     user = service.addUser(new User(params[0]), params[1]); 
                     if (user != null) 
                         return "success";
                     break;
                     
-                case "getAvailableUsers":    
+                case GET_AVAILABLE_USERS:    
                     availableUsers = service.getAvailableUsers();
                     availableUsers.removeAll(requestedUsers);
                     availableUsers.remove(user.getUsername());
@@ -61,13 +69,13 @@ public class ServerNegotiationTask implements Callable<String> {
                         return "success";
                     break;
                     
-                case "getRequestingUsers":
+                case GET_REQUESTING_USERS:
                     requestingUsers = service.getGameRequests(user.getUserID());
                     if (requestingUsers != null)
                         return "success";
                     break;
                 
-                case "requestGame":
+                case REQUEST_GAME:
                     // params[0] is requested players username
                     GameRequest request = new GameRequest(user.getUsername(), params[0]);
                     request = service.makeGameRequest(request);
@@ -77,7 +85,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     }
                     break;
                     
-                case "whiteStartGame":
+                case WHITE_START_GAME:
                     gameRequest = service.whiteStartGame(user.getUserID());
                     if (gameRequest.getGameID() != 0) {
                         game = new Game();
@@ -87,8 +95,8 @@ public class ServerNegotiationTask implements Callable<String> {
                     }
                     break;
                     
-                case "acceptGameRequest":
-                     //params[0] is requesting players username
+                case ACCEPT_GAME_REQUEST:
+                     // params[0] is requesting players username
                     gameRequest = new GameRequest(params[0], user.getUsername());
                     game = service.acceptGameRequest(gameRequest);
                     if (game != null) {
@@ -97,7 +105,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     }
                     break;
                     
-                case "blackStartGame":
+                case BLACK_START_GAME:
                     game = service.blackStartGame(gameRequest);
                     if (game != null) {
                         opponent = gameRequest.getRequestingUser();
@@ -105,11 +113,22 @@ public class ServerNegotiationTask implements Callable<String> {
                     }
                     break;
                     
-                case "endGame":
+                case MAKE_MOVE:
+                    // params[0] is the move
+                    lastMove = service.makeMove(game.getGameID(), params[0]);
+                    if (lastMove != null)
+                        return "success";
+                                
+                case GET_LAST_MOVE:
+                    lastMove = service.getLastMove(game.getGameID());
+                    if (lastMove != null)
+                        return "success";
+                    
+                case END_GAME:
                     game = service.endGame(game.getGameID());
                     return "success";
                     
-                case "reset":
+                case RESET:
                     // params[0] is availability
                     return reset(user.getUserID(), params[0]);
                     
@@ -123,9 +142,9 @@ public class ServerNegotiationTask implements Callable<String> {
     
     private String reset(int userID, String availability) throws IOException {
         if (!availability.equals("onlyAvailable")) {
-            availableUsers = null; 
-            requestingUsers = null;
-            requestedUsers = null; 
+            availableUsers.clear(); 
+            requestingUsers.clear();
+            requestedUsers.clear(); 
             gameRequest = null;
             game = null;
             opponent = null;
