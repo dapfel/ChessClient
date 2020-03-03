@@ -23,7 +23,6 @@ public class ServerNegotiationTask implements Callable<String> {
     private static UsernameList requestedUsers; // users already requested by client 
     private static GameRequest gameRequest;
     private static Game game;
-    private static String lastMove;
     
     public ServerNegotiationTask(Task task, String[] params) {
         this.task = task;
@@ -115,14 +114,18 @@ public class ServerNegotiationTask implements Callable<String> {
                     
                 case MAKE_MOVE:
                     // params[0] is the move
-                    lastMove = service.makeMove(game.getGameID(), params[0]);
-                    if (lastMove != null)
+                    String lastMove = service.makeMove(game.getGameID(), params[0]);
+                    if (lastMove != null) {
+                        game.setMove(lastMove);
                         return "success";
-                                
+                    }
+                      
                 case GET_LAST_MOVE:
                     lastMove = service.getLastMove(game.getGameID());
-                    if (lastMove != null)
+                    if (lastMove != null) {
+                        game.setMove(lastMove);
                         return "success";
+                    }
                     
                 case END_GAME:
                     game = service.endGame(game.getGameID());

@@ -23,11 +23,9 @@ public class PieceImageView extends ImageView {
         this.color = color;
         this.rank = rank;
         this.file = file;
-        if (color.equals(ChessGame.getPlayerColor()))
-            setMouseEventHandlers();
     }
     
-    private void setMouseEventHandlers() {
+    public void setMouseEventHandlers() {
         this.setOnMousePressed((MouseEvent event) -> {
             this.setMouseTransparent(true);
             event.consume();

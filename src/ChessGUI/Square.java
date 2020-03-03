@@ -24,6 +24,7 @@ public class Square extends StackPane {
     
     private final int rank;
     private final char file;
+    private static ChessBoardGUI chessBoardGUI;
 
     public Square(int colorType, int rank, char file) {
         super();
@@ -45,6 +46,9 @@ public class Square extends StackPane {
 
     public void initializePieceImage(ChessPiece piece) {
         PieceImageView pieceImageView = new PieceImageView(piece.getColor(), SwingFXUtils.toFXImage(piece.getImage(), null), piece.getRank(), piece.getFile());
+        // only set mouse event handlers for pieceImageView if its this players piece
+        if (chessBoardGUI.getChessGame().getPlayerColor().equals(pieceImageView.getColor()))
+            pieceImageView.setMouseEventHandlers();
         this.getChildren().add(pieceImageView);
     }
     
@@ -56,8 +60,8 @@ public class Square extends StackPane {
         
         this.setOnMouseDragReleased(((MouseDragEvent event) -> {  
             PieceImageView newPieceImageView = (PieceImageView) event.getGestureSource();
-            if (ChessGame.movePiece(newPieceImageView.getRank(), newPieceImageView.getFile(), this.getRank(), this.getFile())) { // move legality check
-                System.out.println("" + file + rank + newPieceImageView.getFile() + newPieceImageView.getRank());
+            ChessGame chessGame = chessBoardGUI.getChessGame();
+            if (chessGame.movePiece(newPieceImageView.getRank(), newPieceImageView.getFile(), this.getRank(), this.getFile())) { // move legality check
                 this.getChildren().clear(); 
                 this.getChildren().add(newPieceImageView);  
                 resetPieceImage(newPieceImageView, event);
@@ -82,5 +86,9 @@ public class Square extends StackPane {
         newPieceImageView.setStartDragX(event.getSceneX());
         newPieceImageView.setStartDragY(event.getSceneY());
         newPieceImageView.setMouseTransparent(false);
+    }
+
+    public static void setChessBoardGUI(ChessBoardGUI chessBoardGUI) {
+        Square.chessBoardGUI = chessBoardGUI;
     }
 }

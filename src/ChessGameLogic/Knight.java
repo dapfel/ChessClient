@@ -26,7 +26,7 @@ public class Knight extends ChessPiece {
     }
 
     @Override
-    public boolean move(int newRank, char newFile) {
+    public boolean move(int newRank, char newFile, ChessPiece[][] board) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
         

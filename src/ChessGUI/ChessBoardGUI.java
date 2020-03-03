@@ -1,5 +1,6 @@
 package ChessGUI;
 
+import ChessGameLogic.ChessGame;
 import ChessGameLogic.ChessGame.PlayerColor;
 import ChessGameLogic.ChessPiece;
 import javafx.scene.layout.GridPane;
@@ -13,8 +14,10 @@ public class ChessBoardGUI {
     private final GridPane chessBoardPane;
     private final Square[][] squares;
     private final PlayerColor playerColor;
+    private final ChessGame chessGame;
     
-    public ChessBoardGUI(PlayerColor playerColor, ChessPiece[][] board) {
+    public ChessBoardGUI(PlayerColor playerColor, ChessGame chessGame) {
+        this.chessGame = chessGame;
         chessBoardPane = new GridPane();
         squares = new Square[8][8];
         this.playerColor = playerColor;
@@ -30,7 +33,7 @@ public class ChessBoardGUI {
                     chessBoardPane.add(squares[x][y], 7 - x, y);
             }
         }
-        initializePieces(board);
+        initializePieces(chessGame.getBoard());
     }
     
     private void initializePieces(ChessPiece[][] board) {
@@ -48,4 +51,14 @@ public class ChessBoardGUI {
     public GridPane getChessBoardPane() {
         return chessBoardPane;
     }
+
+    public void processOponentsMove(int fromRank, char fromFile, int toRank, char toFile) {
+        PieceImageView pieceImageView = (PieceImageView) squares[fromFile][fromRank].getChildren().get(0);
+        squares[toFile][toRank].getChildren().add(pieceImageView);
+    }
+
+    public ChessGame getChessGame() {
+        return chessGame;
+    }
+
 }

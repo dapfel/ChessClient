@@ -96,4 +96,8 @@ public class ChessClientApp extends Application {
     public static SavedGame getSavedGame() {
         return savedGame;
     }
+
+    public static void setSavedGame(SavedGame savedGame) {
+        ChessClientApp.savedGame = savedGame;
+    }
 }

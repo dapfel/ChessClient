@@ -119,7 +119,7 @@ public class LoginPage {
             if (savedGame != null) { // load a saved game if exists
                 ServerNegotiationTask.setOpponent(savedGame.getOpponent());
                 ServerNegotiationTask.setGame(savedGame.getGame());
-                GamePage gamePage = new GamePage(savedGame.getChessGame());
+                GamePage gamePage = new GamePage(savedGame.getGamePage());
                 primaryStage.setScene(gamePage.getGameScene());
             }
             else { // no saved game. go to Home page

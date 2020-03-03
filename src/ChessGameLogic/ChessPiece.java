@@ -23,7 +23,7 @@ public abstract class ChessPiece {
     /**
      * @return true if valid move, false if not
      */
-    public abstract boolean move(int newRank, char newFile);
+    public abstract boolean move(int newRank, char newFile, ChessPiece[][] board);
     
     public PlayerColor getColor() {
         return color;
