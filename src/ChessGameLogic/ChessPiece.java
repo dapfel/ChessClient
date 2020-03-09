@@ -21,9 +21,9 @@ public abstract class ChessPiece {
     }
     
     /**
-     * @return true if valid move, false if not
+     * @return true if valid isLegalMove, false if not
      */
-    public abstract boolean move(int newRank, char newFile, ChessPiece[][] board);
+    public abstract boolean isLegalMove(int newRank, char newFile, ChessBoard board);
     
     public PlayerColor getColor() {
         return color;

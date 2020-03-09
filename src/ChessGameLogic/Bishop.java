@@ -25,8 +25,33 @@ public class Bishop extends ChessPiece {
     }
 
     @Override
-    public boolean move(int newRank, char newFile, ChessPiece[][] board) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isLegalMove(int newRank, char newFile, ChessBoard board) {
+        if (Math.abs(newRank - rank) == Math.abs(newFile - file)) {
+            int xDirection;
+            int yDirection;
+            if (newRank > rank && newFile < file) { // bishop going towards upper left
+                xDirection = -1;
+                yDirection = 1;
+            }
+            else if (newRank > rank && newFile > file) { // bishop going towards upper right
+                xDirection = 1;
+                yDirection = 1;
+            }
+            else if (newRank < rank && newFile < file) { // bishop going towards lower left
+                xDirection = -1;
+                yDirection = -1;
+            }
+            else { // bishop going towards lower right
+                xDirection = 1;
+                yDirection = -1;
+            }
+            for (int i = 1; i < Math.abs(newRank - rank); i++) {
+                if (board.getPiece((char) (file + i*xDirection), rank + i*yDirection) != null)
+                    return false;
+            }
+            return true;
+        }
+        return false;
     }
         
 }

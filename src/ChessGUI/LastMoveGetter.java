@@ -34,17 +34,23 @@ public class LastMoveGetter extends TimerTask {
 
     @Override
     public void run() {
-        String previousMove = ServerNegotiationTask.getGame().getMove();
+        final String previousMove;
+        if (ServerNegotiationTask.getGame() != null)
+            previousMove = ServerNegotiationTask.getGame().getMove();
+        else
+            previousMove = null;
         ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(ServerNegotiationTask.Task.GET_LAST_MOVE, null));
         Futures.addCallback(
             result,
             new FutureCallback<String>() {
                 @Override
                 public void onSuccess(String response) {
-                    if ("success".equals(response) && !response.equals(previousMove)) {
+                    String currentMove = ServerNegotiationTask.getGame().getMove();
+                    if ("success".equals(response) && currentMove != null && !currentMove.equals(previousMove)) {
                         lastMoveTimer.cancel();
+                        ServerNegotiationTask.setFirstMove(false);
                         Platform.runLater( () -> {
-                            chessGame.processOponentsMove(response);  
+                            chessGame.processOpponentsMove(currentMove);  
                             ChessClientApp.setSavedGame(new SavedGame(gamePage, opponent));
                         });
                     }
@@ -52,10 +58,12 @@ public class LastMoveGetter extends TimerTask {
 
                     } 
                     else if ("failure".equals(response)) { //opponent ended the game
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Game Ended");
-                    alert.setContentText("Your opponent has ended the game. Press the End Game button to return to the home page.");
-                    alert.showAndWait();            
+                    Platform.runLater( () -> {    
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Game Ended");
+                        alert.setContentText("Your opponent has ended the game. Press the End Game button to return to the home page.");
+                        alert.showAndWait();    
+                    });
         }
                 }
                 @Override

@@ -1,6 +1,5 @@
 package ChessGameLogic;
 
-import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
@@ -26,8 +25,13 @@ public class Knight extends ChessPiece {
     }
 
     @Override
-    public boolean move(int newRank, char newFile, ChessPiece[][] board) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isLegalMove(int newRank, char newFile, ChessBoard board) {
+        if (Math.abs(rank - newRank) == 1 && Math.abs(file - newFile) == 2)
+            return true;
+        if (Math.abs(rank - newRank) == 2 && Math.abs(file - newFile) == 1)
+            return true;
+        else
+            return false;
     }
         
 }

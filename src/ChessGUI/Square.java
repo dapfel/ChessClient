@@ -1,8 +1,6 @@
 package ChessGUI;
 
-import ChessGameLogic.ChessGame;
 import ChessGameLogic.ChessPiece;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
@@ -45,7 +43,7 @@ public class Square extends StackPane {
     }
 
     public void initializePieceImage(ChessPiece piece) {
-        PieceImageView pieceImageView = new PieceImageView(piece.getColor(), SwingFXUtils.toFXImage(piece.getImage(), null), piece.getRank(), piece.getFile());
+        PieceImageView pieceImageView = new PieceImageView(piece);
         // only set mouse event handlers for pieceImageView if its this players piece
         if (chessBoardGUI.getChessGame().getPlayerColor().equals(pieceImageView.getColor()))
             pieceImageView.setMouseEventHandlers();
@@ -60,13 +58,8 @@ public class Square extends StackPane {
         
         this.setOnMouseDragReleased(((MouseDragEvent event) -> {  
             PieceImageView newPieceImageView = (PieceImageView) event.getGestureSource();
-            ChessGame chessGame = chessBoardGUI.getChessGame();
-            if (chessGame.movePiece(newPieceImageView.getRank(), newPieceImageView.getFile(), this.getRank(), this.getFile())) { // move legality check
-                this.getChildren().clear(); 
-                this.getChildren().add(newPieceImageView);  
-                resetPieceImage(newPieceImageView, event);
-                event.consume();
-                }
+            chessBoardGUI.ProcessPlayersMove(this, newPieceImageView);
+            event.consume();
         }));
     }
 
@@ -76,16 +69,6 @@ public class Square extends StackPane {
 
     public char getFile() {
         return file;
-    }
-
-    private void resetPieceImage(PieceImageView newPieceImageView, MouseDragEvent event) {
-        newPieceImageView.setFile(this.getFile());
-        newPieceImageView.setRank(this.getRank()); 
-        newPieceImageView.setTranslateX(0);
-        newPieceImageView.setTranslateY(0);
-        newPieceImageView.setStartDragX(event.getSceneX());
-        newPieceImageView.setStartDragY(event.getSceneY());
-        newPieceImageView.setMouseTransparent(false);
     }
 
     public static void setChessBoardGUI(ChessBoardGUI chessBoardGUI) {

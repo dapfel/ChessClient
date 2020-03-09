@@ -25,8 +25,14 @@ public class Queen extends ChessPiece {
     }
 
     @Override
-    public boolean move(int newRank, char newFile, ChessPiece[][] board) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isLegalMove(int newRank, char newFile, ChessBoard board) {
+        //cheat by treating queen as a combined rook and bishop
+        Rook rook = new Rook(this.getColor(), this.getRank(), this.getFile());
+        Bishop bishop = new Bishop(this.getColor(), this.getRank(), this.getFile());
+        if (rook.isLegalMove(newRank, newFile, board) || bishop.isLegalMove(newRank, newFile, board))
+            return true;
+        else
+            return false;
     }
         
 }

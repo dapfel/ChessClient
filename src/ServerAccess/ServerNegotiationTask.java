@@ -23,6 +23,7 @@ public class ServerNegotiationTask implements Callable<String> {
     private static UsernameList requestedUsers; // users already requested by client 
     private static GameRequest gameRequest;
     private static Game game;
+    private static boolean firstMove;
     
     public ServerNegotiationTask(Task task, String[] params) {
         this.task = task;
@@ -119,13 +120,15 @@ public class ServerNegotiationTask implements Callable<String> {
                         game.setMove(lastMove);
                         return "success";
                     }
+                    break;
                       
                 case GET_LAST_MOVE:
                     lastMove = service.getLastMove(game.getGameID());
-                    if (lastMove != null) {
+                    if (lastMove != null || firstMove == true) {
                         game.setMove(lastMove);
                         return "success";
                     }
+                    break;
                     
                 case END_GAME:
                     game = service.endGame(game.getGameID());
@@ -133,8 +136,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     
                 case RESET:
                     // params[0] is availability
-                    return reset(user.getUserID(), params[0]);
-                    
+                    return reset(user.getUserID(), params[0]);                
             }
             return "failure";
         }
@@ -185,6 +187,10 @@ public class ServerNegotiationTask implements Callable<String> {
 
     public static UsernameList getRequestingUsers() {
         return requestingUsers;
+    }
+
+    public static void setFirstMove(boolean firstMove) {
+        ServerNegotiationTask.firstMove = firstMove;
     }
     
 }

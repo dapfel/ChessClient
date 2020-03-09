@@ -36,8 +36,8 @@ public class GamePage {
     private ChessGame chessGame;
     private final User user;
     private final String opponent;
-    private final LastMoveGetter lastMoveGetter;
-    private final Timer lastMoveTimer;
+    private LastMoveGetter lastMoveGetter;
+    private Timer lastMoveTimer;
     private Label turnLabel;
         
     public GamePage(ChessGame chessGame) {
@@ -48,9 +48,13 @@ public class GamePage {
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         this.opponent = ServerNegotiationTask.getOpponent();
+        if (chessGame.getPlayerColor().equals(PlayerColor.BLACK))
+            ServerNegotiationTask.setFirstMove(true);
+        else 
+            ServerNegotiationTask.setFirstMove(false);
         
-        StringProperty moveProperty = chessGame.getMoveProperty();
-        setMovePropertyListener(moveProperty);
+        setMovePropertyListener(chessGame.getMoveProperty());
+        setGameOverListener(chessGame.getGameOverProperty());
         
         lastMoveTimer = new Timer();
         lastMoveGetter = new LastMoveGetter(this, lastMoveTimer);
@@ -156,6 +160,24 @@ public class GamePage {
                 pool);    
         });
     }
+
+    private void setGameOverListener(StringProperty gameOverProperty) {
+        gameOverProperty.addListener((ChangeEvent) -> {
+            String winner;
+            String winnerColor = gameOverProperty.getValue();
+            if (chessGame.getPlayerColor().equals(PlayerColor.valueOf(winnerColor)))
+                winner =  user.getUsername();
+            else
+                winner = opponent;
+            String gameOverMessage = "GAME OVER! " + winner + " has won the game."
+                                     + "Press the END GAME button to exit.";
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setHeaderText(null);
+            alert.setTitle("Game Over");
+            alert.setContentText(gameOverMessage);
+            alert.showAndWait();
+        });
+    }
     
     private void completeEndingGame(String response) {
         if ("success".equals(response)) {
@@ -175,21 +197,30 @@ public class GamePage {
     }
     
     private void completeMakeMove(String response) {
-        if ("success".equals(response)) { 
-            ChessClientApp.setSavedGame(new SavedGame(this, opponent));
-            lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
-        }
-        else if ("IOException".equals(response)) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Connection Error");
-            alert.setContentText("Error connecting to Server. Please try again.");
-            alert.showAndWait();
-        } 
-        else if ("failure".equals(response)) { //opponent ended the game
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Game Ended");
-            alert.setContentText("Your opponent has ended the game. Press the End Game button to return to the home page.");
-            alert.showAndWait();            
+        if (null != response) switch (response) {
+            case "success":
+                ChessClientApp.setSavedGame(new SavedGame(this, opponent));
+                lastMoveTimer = new Timer();
+                lastMoveGetter = new LastMoveGetter(this, lastMoveTimer);
+                lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
+                break;
+            case "IOException":{
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Connection Error");
+                alert.setContentText("Error connecting to Server. Please try again.");
+                alert.showAndWait();
+                    break;
+                }
+            case "failure":{
+                //opponent ended the game
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);            
+                alert.setTitle("Game Ended");
+                alert.setContentText("Your opponent has ended the game. Press the End Game button to return to the home page.");
+                alert.showAndWait();
+                    break;
+                }
+            default:
+                break;
         }
     }
     
