@@ -1,6 +1,7 @@
 package ChessGUI;
 
 import ChessGUI.ChessClientApp.Page;
+import ChessGameLogic.ChessGame;
 import ChessGameLogic.SavedGame;
 import ServerAccess.ServerNegotiationTask;
 import ServerAccess.ServerNegotiationTask.Task;
@@ -9,6 +10,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -117,9 +119,9 @@ public class LoginPage {
         if ("success".equals(response)) {
             SavedGame savedGame = ChessClientApp.getSavedGame();
             if (savedGame != null) { // load a saved game if exists
-                ServerNegotiationTask.setOpponent(savedGame.getOpponent());
-                ServerNegotiationTask.setGame(savedGame.getGame());
+                initializeSavedGame(savedGame);
                 GamePage gamePage = new GamePage(savedGame.getGamePage());
+                setTurnLabel(gamePage.getChessGame());
                 primaryStage.setScene(gamePage.getGameScene());
             }
             else { // no saved game. go to Home page
@@ -143,6 +145,21 @@ public class LoginPage {
             alert.setContentText("Error connecting to Server. Please try again.");
             alert.showAndWait();
         }
+    }
+    
+    private void initializeSavedGame(SavedGame savedGame) {
+        ServerNegotiationTask.setOpponent(savedGame.getOpponent());
+        ServerNegotiationTask.setGame(savedGame.getGame());
+        ChessGame chessGame = savedGame.getGamePage().getChessGame();
+        chessGame.loadPieceImages();
+        chessGame.setMoveProperty(new SimpleStringProperty());
+        chessGame.setTurnProperty(new SimpleStringProperty());
+        chessGame.setGameOverProperty(new SimpleStringProperty());
+        chessGame.setBoardGUI(new ChessBoardGUI(chessGame.getPlayerColor(), chessGame));
+    }
+    
+    private void setTurnLabel(ChessGame chessGame) {
+        chessGame.getTurnProperty().set("Turn: " + chessGame.getTurn().toString());
     }
 
     public Scene getLoginScene() {

@@ -8,7 +8,6 @@ import ChessGameLogic.Knight;
 import ChessGameLogic.Queen;
 import ChessGameLogic.Rook;
 import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 
@@ -45,14 +44,6 @@ public class PieceImageView extends ImageView {
         color = piece.getColor();       
         rank = piece.getRank();
         file = piece.getFile();
-    }
-
-    public PieceImageView(PlayerColor color, PieceType type, Image image, int rank, char file) {
-        super(image);
-        this.color = color;
-        this.type = type;
-        this.rank = rank;
-        this.file = file;
     }
     
     public void setMouseEventHandlers() {

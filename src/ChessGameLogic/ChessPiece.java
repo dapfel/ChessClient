@@ -2,17 +2,18 @@ package ChessGameLogic;
 
 import ChessGameLogic.ChessGame.PlayerColor;
 import java.awt.image.BufferedImage;
+import java.io.Serializable;
 
 /**
  *
  * @author dapfel
  */
-public abstract class ChessPiece {
+public abstract class ChessPiece implements Serializable {
     
-    private final PlayerColor color;
+    final PlayerColor color;
     int rank;
     char file;
-    BufferedImage image;
+    transient BufferedImage image;
 
     public ChessPiece(PlayerColor color, int rank, char file) {
         this.color = color;
@@ -24,6 +25,8 @@ public abstract class ChessPiece {
      * @return true if valid isLegalMove, false if not
      */
     public abstract boolean isLegalMove(int newRank, char newFile, ChessBoard board);
+    
+    public abstract void loadPieceImage();
     
     public PlayerColor getColor() {
         return color;

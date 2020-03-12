@@ -19,11 +19,11 @@ public class PawnPromotionDialog {
         choices.add("Knight");
         choices.add("Bishop");
         
-        ChoiceDialog<String> choiceDialog = new ChoiceDialog("Queen", choices);
+        promotionDialog = new ChoiceDialog("Queen", choices);
 
-        choiceDialog.setTitle("Pawn Promotion");
-        choiceDialog.setHeaderText("Choose a piece to promote your Pawn to");
-        choiceDialog.setContentText("Choose your piece:");
+        promotionDialog.setTitle("Pawn Promotion");
+        promotionDialog.setHeaderText("Choose a piece to promote your Pawn to");
+        promotionDialog.setContentText("Choose your piece:");
     }
 
     public ChoiceDialog getPromotionDialog() {

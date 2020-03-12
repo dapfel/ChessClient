@@ -1,10 +1,12 @@
 package ChessGameLogic;
 
+import java.io.Serializable;
+
 /**
  *
  * @author dapfel
  */
-public class ChessBoard {
+public class ChessBoard implements Serializable {
     
     private final ChessPiece[][] board;
     
@@ -50,10 +52,10 @@ public class ChessBoard {
     }
     
     public ChessPiece getPiece(char file, int rank) {
-        return board[file - 'h' + 7][rank - 1];
+        return board[file - 'a'][rank - 1];
     }
     
     public void setPiece(char file, int rank, ChessPiece piece) {
-        board[file - 'h' + 7][rank - 1] = piece;
+        board[file - 'a'][rank - 1] = piece;
     }
 }

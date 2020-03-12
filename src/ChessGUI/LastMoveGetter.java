@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import java.io.Serializable;
 import java.util.Timer;
 import java.util.TimerTask;
 import javafx.application.Platform;
@@ -16,7 +17,7 @@ import javafx.scene.control.Alert;
  *
  * @author dapfel
  */
-public class LastMoveGetter extends TimerTask {
+public class LastMoveGetter extends TimerTask implements Serializable {
     
     private final GamePage gamePage;
     private final ListeningExecutorService pool;

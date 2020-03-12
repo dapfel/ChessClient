@@ -91,6 +91,7 @@ public class ServerNegotiationTask implements Callable<String> {
                         game = new Game();
                         game.setGameID(gameRequest.getGameID());
                         opponent = gameRequest.getRequestedUser();
+                        firstMove = true;
                         return "success";
                     }
                     break;
@@ -109,6 +110,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     game = service.blackStartGame(gameRequest);
                     if (game != null) {
                         opponent = gameRequest.getRequestingUser();
+                        firstMove = true;
                         return "success";
                     }
                     break;
@@ -117,6 +119,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     // params[0] is the move
                     String lastMove = service.makeMove(game.getGameID(), params[0]);
                     if (lastMove != null) {
+                        firstMove = false;
                         game.setMove(lastMove);
                         return "success";
                     }
@@ -132,6 +135,7 @@ public class ServerNegotiationTask implements Callable<String> {
                     
                 case END_GAME:
                     game = service.endGame(game.getGameID());
+                    firstMove = true;
                     return "success";
                     
                 case RESET:

@@ -11,6 +11,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import java.io.Serializable;
 import java.util.Timer;
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
@@ -27,18 +28,18 @@ import javafx.stage.Stage;
  *
  * @author dapfel
  */
-public class GamePage {
+public class GamePage implements Serializable {
 
-    private final Stage primaryStage;
-    private final ListeningExecutorService pool;
+    private final transient Stage primaryStage;
+    private final transient ListeningExecutorService pool;
     private final int gameID;
-    private final Scene gameScene;
+    private final transient Scene gameScene;
     private ChessGame chessGame;
     private final User user;
     private final String opponent;
-    private LastMoveGetter lastMoveGetter;
-    private Timer lastMoveTimer;
-    private Label turnLabel;
+    private transient LastMoveGetter lastMoveGetter;
+    private transient Timer lastMoveTimer;
+    private transient Label turnLabel;
         
     public GamePage(ChessGame chessGame) {
         ChessClientApp.setCurrentPage(Page.GAME);
@@ -48,10 +49,6 @@ public class GamePage {
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         this.opponent = ServerNegotiationTask.getOpponent();
-        if (chessGame.getPlayerColor().equals(PlayerColor.BLACK))
-            ServerNegotiationTask.setFirstMove(true);
-        else 
-            ServerNegotiationTask.setFirstMove(false);
         
         setMovePropertyListener(chessGame.getMoveProperty());
         setGameOverListener(chessGame.getGameOverProperty());
@@ -70,14 +67,15 @@ public class GamePage {
     
     public GamePage(GamePage gamePage) {
         this(gamePage.getChessGame());
-        turnLabel.setText("TURN: " + chessGame.getTurn());
         if (gamePage.getChessGame().getTurn().equals(chessGame.getPlayerColor())) {
             lastMoveTimer.cancel();
         }
         else {
             lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
-            chessGame.freezeBoard();
+            chessGame.getBoardGUI().freezeBoard();
         }
+        if (ServerNegotiationTask.getGame().getMove() == null)
+            ServerNegotiationTask.setFirstMove(true);
     }
     
     private HBox topHbox() {
@@ -209,7 +207,7 @@ public class GamePage {
                 alert.setTitle("Connection Error");
                 alert.setContentText("Error connecting to Server. Please try again.");
                 alert.showAndWait();
-                    break;
+                break;
                 }
             case "failure":{
                 //opponent ended the game
@@ -217,7 +215,7 @@ public class GamePage {
                 alert.setTitle("Game Ended");
                 alert.setContentText("Your opponent has ended the game. Press the End Game button to return to the home page.");
                 alert.showAndWait();
-                    break;
+                break;
                 }
             default:
                 break;

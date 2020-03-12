@@ -1,30 +1,21 @@
 package ChessGameLogic;
 
 import java.io.IOException;
+import java.io.Serializable;
 import javax.imageio.ImageIO;
 
 /**
  *
  * @author dapfel
  */
-public class Rook extends ChessPiece {
+public class Rook extends ChessPiece implements Serializable {
     
     private boolean hasBeenMoved;
 
     public Rook(ChessGame.PlayerColor color, int rank, char file) {
         super(color, rank, file);
         hasBeenMoved = false;
-        try {
-            if (color == ChessGame.PlayerColor.WHITE) {
-                image = ImageIO.read(getClass().getResource("/Images/white_rook.png"));
-            }
-            else {
-                image = ImageIO.read(getClass().getResource("/Images/black_rook.png"));
-            }
-        }
-        catch (IOException e) {
-            
-        }
+        loadPieceImage();
     }
 
     @Override
@@ -63,6 +54,21 @@ public class Rook extends ChessPiece {
 
     public void setHasBeenMoved(boolean hasBeenMoved) {
         this.hasBeenMoved = hasBeenMoved;
+    }
+
+    @Override
+    public void loadPieceImage() {
+        try {
+            if (color == ChessGame.PlayerColor.WHITE) {
+                image = ImageIO.read(getClass().getResource("/Images/white_rook.png"));
+            }
+            else {
+                image = ImageIO.read(getClass().getResource("/Images/black_rook.png"));
+            }
+        }
+        catch (IOException e) {
+            
+        }
     }
        
     

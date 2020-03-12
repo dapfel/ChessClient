@@ -2,13 +2,14 @@ package ChessGameLogic;
 
 import ChessGameLogic.ChessGame.PlayerColor;
 import java.io.IOException;
+import java.io.Serializable;
 import javax.imageio.ImageIO;
 
 /**
  *
  * @author dapfel
  */
-public class King extends ChessPiece {
+public class King extends ChessPiece implements Serializable {
     
     private boolean hasBeenMoved;
     private static boolean castle;
@@ -16,30 +17,31 @@ public class King extends ChessPiece {
     public King(ChessGame.PlayerColor color, int rank, char file) {
         super(color, rank, file);
         hasBeenMoved = false;
-        try {
-            if (color == ChessGame.PlayerColor.WHITE) {
-                image = ImageIO.read(getClass().getResource("/Images/white_king.png"));
-            }
-            else {
-                image = ImageIO.read(getClass().getResource("/Images/black_king.png"));
-            }
-        }
-        catch (IOException e) {
-            
-        }
+        loadPieceImage();
     }
 
     @Override
     public boolean isLegalMove(int newRank, char newFile, ChessBoard board) {
+        int currentRank = rank; 
+        char currentFile = file;
         
-        if ((rank == newRank || Math.abs(rank - newRank) == 1) && (file == newFile || Math.abs(file - newFile) == 1))
-            return true;
+        if ((rank == newRank || Math.abs(rank - newRank) == 1) && (file == newFile || Math.abs(file - newFile) == 1)) {
+            ChessPiece opponentPiece = board.getPiece(newFile, newRank);
+            moveKing(newRank, newFile, board);
+            if (!inCheck(board)) {
+                moveKing(currentRank, currentFile, board);
+                board.setPiece(newFile, newRank, opponentPiece);
+                return true;
+            }
+            moveKing(currentRank, currentFile, board);
+            board.setPiece(newFile, newRank, opponentPiece);
+        }
         
         //--------- castling ----------------------------------
-        if (this.hasBeenMoved || inCheck(board))
+        else if (this.hasBeenMoved || inCheck(board))
             return false;
         // white player
-        if (this.getColor().equals(PlayerColor.WHITE)) {
+        else if (this.getColor().equals(PlayerColor.WHITE)) {
             if (newRank == 1 && newFile == 'g') {// king side castle
                 ChessPiece potentialRook = board.getPiece('h', 1);
                 if (potentialRook != null && potentialRook.getClass().equals(Rook.class)) {
@@ -176,12 +178,21 @@ public class King extends ChessPiece {
         // check if king can move
         for (int i = -1; i < 2; i++)
             for (int j = -1; j < 2; j++)
-                if (currentRank + i > 0 && currentRank + i < 9 && currentFile + j > 'a' && currentFile + j < 'h') {
-                     moveKing(currentRank + i, (char) (currentFile + j), board);
-                     if (!inCheck(board))
-                         return false;
+                if (rank + i > 0 && rank + i < 9 && file + j > 'a' && file + j < 'h') {
+                    ChessPiece opponentPiece = board.getPiece((char) (file + j), rank + i);
+                    if (opponentPiece != null && !opponentPiece.getColor().equals(this.getColor())) {
+                        moveKing(rank + i, (char) (file + j), board);
+                        if (!inCheck(board)) {
+                            moveKing(currentRank, currentFile, board); 
+                            board.setPiece((char) (file + j), rank + i, opponentPiece);
+                            return false;
+                        }
+                        else {
+                            moveKing(currentRank, currentFile, board);
+                            board.setPiece((char) (file + j), rank + i, opponentPiece);
+                        }
+                    }
                 }      
-        moveKing(currentRank, currentFile, board); 
         
         //get attacking piece
         ChessPiece attackingPiece = null;      
@@ -221,6 +232,21 @@ public class King extends ChessPiece {
 
     public void setHasBeenMoved(boolean hasBeenMoved) {
         this.hasBeenMoved = hasBeenMoved;
+    }
+
+    @Override
+    public void loadPieceImage() {
+        try {
+            if (color == ChessGame.PlayerColor.WHITE) {
+                image = ImageIO.read(getClass().getResource("/Images/white_king.png"));
+            }
+            else {
+                image = ImageIO.read(getClass().getResource("/Images/black_king.png"));
+            }
+        }
+        catch (IOException e) {
+            
+        }
     }
         
     

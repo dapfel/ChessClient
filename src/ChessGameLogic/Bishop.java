@@ -1,27 +1,18 @@
 package ChessGameLogic;
 
 import java.io.IOException;
+import java.io.Serializable;
 import javax.imageio.ImageIO;
 
 /**
  *
  * @author dapfel
  */
-public class Bishop extends ChessPiece {
+public class Bishop extends ChessPiece implements Serializable {
 
     public Bishop(ChessGame.PlayerColor color, int rank, char file) {
         super(color, rank, file);
-        try {
-            if (color == ChessGame.PlayerColor.WHITE) {
-                image = ImageIO.read(getClass().getResource("/Images/white_bishop.png"));
-            }
-            else {
-                image = ImageIO.read(getClass().getResource("/Images/black_bishop.png"));
-            }
-        }
-        catch (IOException e) {
-            
-        }
+        loadPieceImage();
     }
 
     @Override
@@ -52,6 +43,21 @@ public class Bishop extends ChessPiece {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void loadPieceImage() {
+        try {
+            if (color == ChessGame.PlayerColor.WHITE) {
+                image = ImageIO.read(getClass().getResource("/Images/white_bishop.png"));
+            }
+            else {
+                image = ImageIO.read(getClass().getResource("/Images/black_bishop.png"));
+            }
+        }
+        catch (IOException e) {
+            
+        }
     }
         
 }

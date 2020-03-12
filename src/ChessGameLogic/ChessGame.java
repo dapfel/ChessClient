@@ -1,21 +1,19 @@
-
 package ChessGameLogic;
 
 import ChessGUI.ChessBoardGUI;
 import ChessGUI.PawnPromotionDialog;
 import ChessGUI.PieceImageView.PieceType;
+import java.io.Serializable;
 import java.util.Optional;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.event.EventHandler;
 import javafx.scene.control.ChoiceDialog;
-import javafx.scene.input.MouseEvent;
 
 /**
  *
  * @author dapfel
  */
-public class ChessGame {
+public class ChessGame implements Serializable {
     
     public enum PlayerColor {WHITE, BLACK};
     
@@ -23,12 +21,11 @@ public class ChessGame {
     private final PlayerColor opponentColor;
     private PlayerColor turn; // whoose turn it is 
     private String lastMove;
-    private StringProperty turnProperty;
+    private transient StringProperty turnProperty;
     private final ChessBoard board;
-    private final ChessBoardGUI boardGUI;
-    private final EventHandler<MouseEvent> handler = MouseEvent::consume; // event filter to consume mouse events during opponents turn
-    private final StringProperty moveProperty; 
-    private final StringProperty gameOverProperty;
+    private transient ChessBoardGUI boardGUI;
+    private transient StringProperty moveProperty; 
+    private transient StringProperty gameOverProperty;
     private final King playersKing;
     private final King opponentsKing;
     
@@ -51,13 +48,14 @@ public class ChessGame {
         }
         
         boardGUI = new ChessBoardGUI(playerColor, this);
+        
         moveProperty = new SimpleStringProperty();
         gameOverProperty = new SimpleStringProperty();
         turnProperty = new SimpleStringProperty();
         
         turn = PlayerColor.WHITE;
         if (!playerColor.equals(turn))
-            freezeBoard();
+            boardGUI.freezeBoard();
     }
     
     public boolean makeMove(int fromRank, char fromFile, int toRank, char toFile) {
@@ -76,7 +74,7 @@ public class ChessGame {
         if (opponentPiece != null && opponentPiece.getColor().equals(playerColor))
             return false;
         
-        // check if legal isLegalMove for specific piece
+        // check if legal move for specific piece
         if (!playersPiece.isLegalMove(toRank, toFile, board))
             return false;
         
@@ -145,7 +143,7 @@ public class ChessGame {
         changeTurn();
         
         if (playersKing.inCheckmate(board)) {
-            freezeBoard();
+            boardGUI.freezeBoard();
             endGame(opponentColor);    
         }
     }
@@ -281,20 +279,6 @@ public class ChessGame {
         board.getPiece(toFile, toRank).setRank(toRank);
     }
     
-    /*
-    Freeze the game board during opponents turn to not allow this player to move.
-    */
-    public void freezeBoard() {
-        boardGUI.getChessBoardPane().addEventFilter(MouseEvent.ANY, handler);
-    }
-    
-    /*
-    Unfreeze the game board when its this players turn
-    */
-    private void unfreezeBoard() {
-        boardGUI.getChessBoardPane().removeEventFilter(MouseEvent.ANY, handler);
-    }
-    
     private void changeTurn() {
         if (turn.equals(PlayerColor.WHITE)) {
             turn = PlayerColor.BLACK;
@@ -304,10 +288,13 @@ public class ChessGame {
             turn = PlayerColor.WHITE;
             turnProperty.set("TURN: " + turn);
         }
-        if (turn.equals(playerColor))
-            unfreezeBoard();
-        else
-            freezeBoard();
+    }
+    
+    public void loadPieceImages() {
+        for (char i = 'a'; i < 'i'; i++)
+            for (int j = 1; j < 9; j++)
+                if (board.getPiece(i, j) != null)
+                    board.getPiece(i, j).loadPieceImage();
     }
 
     public StringProperty getTurnProperty() {
@@ -344,6 +331,22 @@ public class ChessGame {
 
     public ChessBoard getBoard() {
         return board;
+    }
+
+    public void setBoardGUI(ChessBoardGUI boardGUI) {
+        this.boardGUI = boardGUI;
+    } 
+
+    public void setTurnProperty(StringProperty turnProperty) {
+        this.turnProperty = turnProperty;
+    }
+
+    public void setMoveProperty(StringProperty moveProperty) {
+        this.moveProperty = moveProperty;
+    }
+
+    public void setGameOverProperty(StringProperty gameOverProperty) {
+        this.gameOverProperty = gameOverProperty;
     }
     
 }

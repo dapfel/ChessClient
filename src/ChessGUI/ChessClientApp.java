@@ -5,7 +5,9 @@ import ServerAccess.ServerNegotiationTask;
 import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -58,7 +60,7 @@ public class ChessClientApp extends Application {
     
     private static void saveGame() {
         try {
-            FileOutputStream fileOut = new FileOutputStream("/SavedGame");
+            FileOutputStream fileOut = new FileOutputStream("src/SavedGame/saved-game");
             try (ObjectOutputStream objectOut = new ObjectOutputStream(fileOut)) {
                 objectOut.writeObject(savedGame);
             } 
@@ -68,7 +70,7 @@ public class ChessClientApp extends Application {
     
     private static void loadGame() {
         try {
-            FileInputStream fileIn = new FileInputStream("/SavedGame");
+            FileInputStream fileIn = new FileInputStream("src/SavedGame/saved-game");
             ObjectInputStream objectIn = new ObjectInputStream(fileIn);
             savedGame = (SavedGame) objectIn.readObject();
         } 
@@ -99,5 +101,10 @@ public class ChessClientApp extends Application {
 
     public static void setSavedGame(SavedGame savedGame) {
         ChessClientApp.savedGame = savedGame;
+        if (savedGame == null) { 
+            // delete the saved game file
+            File file = new File("src/SavedGame/saved-game");
+            file.delete();
+        }
     }
 }
