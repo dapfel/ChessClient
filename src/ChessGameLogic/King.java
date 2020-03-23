@@ -37,7 +37,7 @@ public class King extends ChessPiece implements Serializable {
             board.setPiece(newFile, newRank, opponentPiece);
         }
         
-        //--------- castling ----------------------------------
+        //--------- castling ------------------------------------
         else if (this.hasBeenMoved || inCheck(board))
             return false;
         // white player
@@ -178,7 +178,7 @@ public class King extends ChessPiece implements Serializable {
         // check if king can move
         for (int i = -1; i < 2; i++)
             for (int j = -1; j < 2; j++)
-                if (rank + i > 0 && rank + i < 9 && file + j > 'a' && file + j < 'h') {
+                if (rank + i > 0 && rank + i < 9 && file + j >= 'a' && file + j < 'i') {
                     ChessPiece opponentPiece = board.getPiece((char) (file + j), rank + i);
                     if (opponentPiece != null && !opponentPiece.getColor().equals(this.getColor())) {
                         moveKing(rank + i, (char) (file + j), board);
@@ -194,28 +194,56 @@ public class King extends ChessPiece implements Serializable {
                     }
                 }      
         
-        //get attacking piece
-        ChessPiece attackingPiece = null;      
+        //get attacking piece(s)
+        ChessPiece attackingPiece1 = null;      
+        ChessPiece attackingPiece2 = null;
         for (char i = 'a'; i < 'i'; i++)
             for (int j = 1; j < 9; j++)
                 if (board.getPiece(i, j) != null && !board.getPiece(i, j).getColor().equals(this.getColor()))
                     if (board.getPiece(i, j).isLegalMove(rank, file, board))
-                        attackingPiece = board.getPiece(i, j);
+                        if (attackingPiece1 == null)
+                            attackingPiece1 = board.getPiece(i, j);
+                        else 
+                            attackingPiece2 = board.getPiece(i, j);
         
-        // check if any piece can take the attacker
-        for (char i = 'a'; i < 'i'; i++)
-            for (int j = 1; j < 9; j++)
-                if (board.getPiece(i, j) != null && board.getPiece(i, j).getColor().equals(this.getColor()))
-                    if (board.getPiece(i, j).isLegalMove(attackingPiece.getRank(), attackingPiece.getFile(), board))
-                        return false;
+        
+        // check if any piece can take the attacker (if only one)
+        if (attackingPiece2 == null) {
+            for (char i = 'a'; i < 'i'; i++)
+                for (int j = 1; j < 9; j++)
+                    if (board.getPiece(i, j) != null && board.getPiece(i, j).getColor().equals(this.getColor()))
+                        if (board.getPiece(i, j).isLegalMove(attackingPiece1.getRank(), attackingPiece1.getFile(), board))
+                            return false;
+        }
+        
+        // check if any piece can block the attacker (if only one attacker and its a blockable type piece - Queen, Rook or Bishop)
+        if (attackingPiece2 == null) { 
+            if (attackingPiece1.getClass().equals(Rook.class) || attackingPiece1.getClass().equals(Queen.class) || attackingPiece1.getClass().equals(Bishop.class)) {
+                ChessPiece piece; // potential piece that can block mate
+                for (char i = 'a'; i < 'i'; i++) {
+                    for (int j = 1; j < 9; j++) {
+                        piece = board.getPiece(i, j);
+                        if (piece != null && piece.getColor().equals(this.getColor())) {
+                            if (piece.canBlockCheck(this, board))
+                                return false;
+                        }
+                    }
+                }
+            }
+        }
         return true;
     }
     
+    @Override
+    public boolean canBlockCheck(King king, ChessBoard board) {
+        return false;
+    }
+    
     private void moveKing(int toRank, char toFile, ChessBoard board) {
-        board.setPiece(toFile, toRank, board.getPiece(file, rank));
+        board.setPiece(toFile, toRank, this);
         board.setPiece(file, rank, null);
-        board.getPiece(toFile, toRank).setFile(toFile);
-        board.getPiece(toFile, toRank).setRank(toRank);
+        this.setFile(toFile);
+        this.setRank(toRank);
     }
     
     private boolean adjacent(ChessPiece piece1, ChessPiece piece2) {
@@ -247,7 +275,5 @@ public class King extends ChessPiece implements Serializable {
         catch (IOException e) {
             
         }
-    }
-        
-    
+    }  
 }

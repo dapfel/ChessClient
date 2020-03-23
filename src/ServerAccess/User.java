@@ -17,6 +17,9 @@ public class User implements Serializable {
     private Integer draws;
 
     public User() {
+        wins = 0;
+        losses = 0;
+        draws = 0;
     }
 
     public User(String username) {

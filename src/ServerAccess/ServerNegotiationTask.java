@@ -135,7 +135,6 @@ public class ServerNegotiationTask implements Callable<String> {
                     
                 case END_GAME:
                     game = service.endGame(game.getGameID());
-                    firstMove = true;
                     return "success";
                     
                 case RESET:
@@ -157,6 +156,7 @@ public class ServerNegotiationTask implements Callable<String> {
             gameRequest = null;
             game = null;
             opponent = null;
+            firstMove = true;
         }
          return(service.reset(userID, availability));
     }

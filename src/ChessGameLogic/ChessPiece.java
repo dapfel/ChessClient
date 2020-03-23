@@ -27,6 +27,29 @@ public abstract class ChessPiece implements Serializable {
     public abstract boolean isLegalMove(int newRank, char newFile, ChessBoard board);
     
     public abstract void loadPieceImage();
+
+    public boolean canBlockCheck(King king, ChessBoard board) {
+        int currentRank = rank;
+        char currentFile = file;
+        for (char i = 'a'; i < 'i'; i++)
+            for (int j = 1; j < 9; j++)
+                if (board.getPiece(i, j) == null && this.isLegalMove(j, i, board)) {
+                    this.move(i, j, board);
+                    if (!king.inCheck(board)) {  
+                        this.move(currentFile, currentRank, board);
+                        return true;
+                    }
+                    this.move(currentFile, currentRank, board);
+                }
+        return false;
+    }   
+    
+    public void move(char toFile, int toRank, ChessBoard board) {
+        board.setPiece(toFile, toRank, this);
+        board.setPiece(file, rank, null);
+        this.setFile(toFile);
+        this.setRank(toRank);
+    }
     
     public PlayerColor getColor() {
         return color;
@@ -51,5 +74,7 @@ public abstract class ChessPiece implements Serializable {
     public BufferedImage getImage() {
         return image;
     }
+
+
 }
     

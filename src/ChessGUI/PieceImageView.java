@@ -65,6 +65,11 @@ public class PieceImageView extends ImageView {
             this.setTranslateY(event.getSceneY() - startDragY);
             event.consume();
         });
+        
+        this.setOnMouseReleased((MouseEvent event) -> {
+            this.setMouseTransparent(false);
+            event.consume();
+        });
     }
     
     public PlayerColor getColor() {

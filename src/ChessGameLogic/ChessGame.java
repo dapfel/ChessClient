@@ -55,7 +55,9 @@ public class ChessGame implements Serializable {
         
         turn = PlayerColor.WHITE;
         if (!playerColor.equals(turn))
-            boardGUI.freezeBoard();
+            boardGUI.freezeBoard();       
+        
+        turnProperty.set("TURN: " + turn);
     }
     
     public boolean makeMove(int fromRank, char fromFile, int toRank, char toFile) {
@@ -78,7 +80,7 @@ public class ChessGame implements Serializable {
         if (!playersPiece.isLegalMove(toRank, toFile, board))
             return false;
         
-        //check if moves puts or keeps own king in check   
+        //check if move puts or keeps own king in check   
         movePiece(fromRank, fromFile, toRank, toFile);
         if (playersKing.inCheck(board)) { //if in check - reverse the move
             movePiece(toRank, toFile, fromRank, fromFile);

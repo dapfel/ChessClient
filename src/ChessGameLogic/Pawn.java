@@ -21,38 +21,44 @@ public class Pawn extends ChessPiece implements Serializable {
     @Override
     public boolean isLegalMove(int newRank, char newFile, ChessBoard board) {
         if (this.getColor() == PlayerColor.WHITE) {
-            if (file == newFile && (rank == 2 && newRank == 4))
+            if (file == newFile && (rank == 2 && newRank == 4)) {
                 if (board.getPiece(newFile, newRank) == null && board.getPiece(newFile, newRank - 1) == null)
                     return true;
-            else if (file == newFile && (rank == newRank - 1))
+            }
+            else if (file == newFile && (rank == newRank - 1)) {
                 if (board.getPiece(newFile, newRank) == null) {
                     if (newRank == 8)
                         promotion = true;
                     return true;
                 }
-            else if (newRank - rank == 1 && Math.abs(newFile - file) == 1)
+            }
+            else if (newRank - rank == 1 && Math.abs(newFile - file) == 1) {
                 if (!(board.getPiece(newFile, newRank) == null)) {
                     if (newRank == 8)
                         promotion = true;
                     return true;
                 }
+            }
         }
         else { // its a black pawn
-            if (file == newFile && (rank == 7 && newRank == 5))
+            if (file == newFile && (rank == 7 && newRank == 5)) {
                 if (board.getPiece(newFile, newRank) == null && board.getPiece(newFile, newRank + 1) == null)
                     return true;
-            else if (file == newFile && (rank == newRank + 1))
+            }
+            else if (file == newFile && (rank == newRank + 1)) {
                 if (board.getPiece(newFile, newRank) == null) {
                     if (newRank == 1)
                         promotion = true;
                     return true;
                 }
-            else if (rank - newRank == 1 && Math.abs(newFile - file) == 1)
+            }
+            else if (rank - newRank == 1 && Math.abs(newFile - file) == 1) {
                 if (!(board.getPiece(newFile, newRank) == null)) {
                     if (newRank == 8)
                         promotion = true;                     
                     return true;
                 }
+            }
         }
         return false;
     }

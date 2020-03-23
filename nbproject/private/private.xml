@@ -5,11 +5,13 @@
         <group>
             <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGameLogic/King.java</file>
             <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/ChessBoardGUI.java</file>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/LastMoveGetter.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/ChessClientApp.java</file>
             <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/GamePage.java</file>
             <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGameLogic/ChessGame.java</file>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/Square.java</file>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGameLogic/ChessBoard.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGameLogic/ChessPiece.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ServerAccess/User.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ServerAccess/ServerNegotiationTask.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/HomePage.java</file>
         </group>
     </open-files>
 </project-private>

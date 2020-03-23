@@ -117,7 +117,7 @@ public class GamePage implements Serializable {
         
         Label gameLabel = new Label(user.getUsername() + " vs " + opponent);
         
-        turnLabel = new Label("TURN: " + chessGame.getTurn());
+        turnLabel = new Label();
         turnLabel.textProperty().bind(chessGame.getTurnProperty());
         
         topHbox.getChildren().addAll(endGameButton, gameLabel, turnLabel);
