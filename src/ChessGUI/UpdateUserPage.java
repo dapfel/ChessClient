@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGUI.ChessClientApp.Page;
 import ServerAccess.ServerNegotiationTask;
 import ServerAccess.ServerNegotiationTask.Task;
 import com.google.common.util.concurrent.FutureCallback;
@@ -30,7 +29,7 @@ public class UpdateUserPage {
     private static Stage primaryStage;
 
     public UpdateUserPage() {
-        ChessClientApp.setCurrentPage(Page.UPDATE_USER);
+        ChessClientApp.setCurrentPage(this);
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         

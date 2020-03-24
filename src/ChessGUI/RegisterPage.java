@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGUI.ChessClientApp.Page;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -31,7 +30,7 @@ public class RegisterPage {
     private static Stage primaryStage;
     
     public RegisterPage() {
-        ChessClientApp.setCurrentPage(Page.REGISTER);
+        ChessClientApp.setCurrentPage(this);
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         

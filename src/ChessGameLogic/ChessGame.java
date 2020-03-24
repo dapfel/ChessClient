@@ -85,13 +85,13 @@ public class ChessGame implements Serializable {
         if (playersKing.inCheck(board)) { //if in check - reverse the move
             movePiece(toRank, toFile, fromRank, fromFile);
             board.setPiece(toFile, toRank, opponentPiece);
-            Pawn.setPromotion(false);
             King.setCastle(false);
             return false;
         }
         
         String additionalMoveInfo = ""; // to add info to move sent to server about pawn promotion or castle
-        if (Pawn.isPromotion())
+        if (playersPiece.getClass().equals(Pawn.class) && ((playerColor.equals(PlayerColor.WHITE) && toRank == 8) ||
+                                                           (playerColor.equals(PlayerColor.BLACK) && toRank == 1)))
             additionalMoveInfo = promotePawn(toRank, toFile);
         if (King.isCastle()) 
             additionalMoveInfo = castle(toRank, toFile);
@@ -174,8 +174,7 @@ public class ChessGame implements Serializable {
                 board.setPiece(toFile, toRank, new Bishop(playerColor,toRank ,toFile));
                 promotionString = "promotion-B";
                 break;
-        }
-        Pawn.setPromotion(false);   
+        } 
         return promotionString;
     }
     

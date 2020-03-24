@@ -29,7 +29,7 @@ public class AcceptedGameChecker extends TimerTask {
             Future<String> result = homePage.getPool().submit(checkForAcceptedTask);
             String response = result.get();
             if ("success".equals(response)) {
-                HomePage.stopRefreshTimers();
+                homePage.stopRefreshTimers();
                 GamePage gamePage = new GamePage(new ChessGame(PlayerColor.WHITE));
                 Platform.runLater(() -> homePage.getPrimaryStage().setScene(gamePage.getGameScene()));
             }

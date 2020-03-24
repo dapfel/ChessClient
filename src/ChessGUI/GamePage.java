@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGUI.ChessClientApp.Page;
 import ChessGameLogic.ChessGame;
 import ChessGameLogic.ChessGame.PlayerColor;
 import ChessGameLogic.SavedGame;
@@ -40,15 +39,17 @@ public class GamePage implements Serializable {
     private transient LastMoveGetter lastMoveGetter;
     private transient Timer lastMoveTimer;
     private transient Label turnLabel;
+    private transient String winner;
         
     public GamePage(ChessGame chessGame) {
-        ChessClientApp.setCurrentPage(Page.GAME);
+        ChessClientApp.setCurrentPage(this);
         this.user = ServerNegotiationTask.getUser();
         this.gameID = ServerNegotiationTask.getGame().getGameID();
         this.chessGame = chessGame;
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         this.opponent = ServerNegotiationTask.getOpponent();
+        winner = null;
         
         setMovePropertyListener(chessGame.getMoveProperty());
         setGameOverListener(chessGame.getGameOverProperty());
@@ -89,7 +90,8 @@ public class GamePage implements Serializable {
             ProgressDialog progressDialog = new ProgressDialog("Ending Game");
             progressDialog.show();
             
-            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.END_GAME, new String[0]));
+            String[] params = {winner};
+            ListenableFuture<String> result = pool.submit(new ServerNegotiationTask(Task.END_GAME, params));
             Futures.addCallback(
                 result,
                 new FutureCallback<String>() {
@@ -161,7 +163,7 @@ public class GamePage implements Serializable {
 
     private void setGameOverListener(StringProperty gameOverProperty) {
         gameOverProperty.addListener((ChangeEvent) -> {
-            String winner;
+            lastMoveGetter.cancel();
             String winnerColor = gameOverProperty.getValue();
             if (chessGame.getPlayerColor().equals(PlayerColor.valueOf(winnerColor)))
                 winner =  user.getUsername();
@@ -179,6 +181,7 @@ public class GamePage implements Serializable {
     
     private void completeEndingGame(String response) {
         if ("success".equals(response)) {
+            lastMoveGetter.cancel();
             ChessClientApp.setSavedGame(null);
             HomePage homePage = new HomePage(user);
             primaryStage.setScene(homePage.getHomeScene());
@@ -220,6 +223,10 @@ public class GamePage implements Serializable {
             default:
                 break;
         }
+    }
+    
+    public void cancelLastMoveGetter() {
+        lastMoveGetter.cancel();
     }
     
     public Scene getGameScene() {

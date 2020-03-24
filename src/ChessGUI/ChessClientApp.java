@@ -21,12 +21,10 @@ import javafx.stage.Stage;
  */
 public class ChessClientApp extends Application {
     
-    public enum Page {LOGIN, REGISTER, HOME, UPDATE_USER, GAME}
-    
     private static SavedGame savedGame; // to save/load a game to/from the computer when program not running
     private static ListeningExecutorService pool;
     private static Stage primaryStage;
-    private static Page currentPage;
+    private static Object currentPage;
     
     @Override
     public void start(Stage primaryStage) {
@@ -39,10 +37,11 @@ public class ChessClientApp extends Application {
         
         primaryStage.setOnCloseRequest( event -> {   
         setUnavailable();
-        if (currentPage == Page.HOME) {
-            HomePage.stopRefreshTimers();
+        if (currentPage.getClass().equals(HomePage.class)) {
+            ((HomePage) currentPage).stopRefreshTimers();
         }
-        if (currentPage == Page.GAME) {
+        if (currentPage.getClass().equals(GamePage.class)) {
+            ((GamePage) currentPage).cancelLastMoveGetter();
              saveGame();  
         }
         pool.shutdown();
@@ -90,7 +89,7 @@ public class ChessClientApp extends Application {
         return primaryStage;
     }
 
-    public static void setCurrentPage(Page currentPage) {
+    public static void setCurrentPage(Object currentPage) {
         ChessClientApp.currentPage = currentPage;
     }
     

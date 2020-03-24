@@ -308,8 +308,8 @@ public class ChessServerService {
      *         returns null if the game doesn't exist
      * @throws IOException if there is a error in connecting to the server
      */
-    public Game endGame(int gameID) throws IOException {
-        String url = BASE_URL + "game/" + gameID;
+    public Game endGame(int gameID, String winner) throws IOException {
+        String url = BASE_URL + "game/" + gameID + "/" + winner;
         try (InputStreamReader reader = new InputStreamReader(new URL(url).openStream())) {
             Game game = new Gson().fromJson(reader, Game.class);
             return game;

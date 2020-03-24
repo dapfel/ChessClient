@@ -24,6 +24,9 @@ public class User implements Serializable {
 
     public User(String username) {
         this.username = username;
+        wins = 0;
+        losses = 0;
+        draws = 0;
     }
 
     public User(Integer userID) {

@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGUI.ChessClientApp.Page;
 import ServerAccess.ServerNegotiationTask;
 import ServerAccess.ServerNegotiationTask.Task;
 import ServerAccess.User;
@@ -45,7 +44,7 @@ public class HomePage {
     private static Timer timer3;
     
     public HomePage(User user) {
-        ChessClientApp.setCurrentPage(Page.HOME);
+        ChessClientApp.setCurrentPage(this);
         this.user = user;
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
@@ -254,7 +253,7 @@ public class HomePage {
         timer2.schedule(acceptedGameChecker, 5000, 5000);
     }
     
-    public static void stopRefreshTimers() {
+    public void stopRefreshTimers() {
             if (timer1 != null) {
                 playerListsRefresher.cancel();
                 timer1.cancel();

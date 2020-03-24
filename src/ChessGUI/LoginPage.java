@@ -1,6 +1,5 @@
 package ChessGUI;
 
-import ChessGUI.ChessClientApp.Page;
 import ChessGameLogic.ChessGame;
 import ChessGameLogic.SavedGame;
 import ServerAccess.ServerNegotiationTask;
@@ -33,7 +32,7 @@ public class LoginPage {
     private static Stage primaryStage;
     
     public LoginPage() {
-        ChessClientApp.setCurrentPage(Page.LOGIN);
+        ChessClientApp.setCurrentPage(this);
         pool = ChessClientApp.getPool();
         primaryStage = ChessClientApp.getPrimaryStage();
         

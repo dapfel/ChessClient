@@ -134,7 +134,8 @@ public class ServerNegotiationTask implements Callable<String> {
                     break;
                     
                 case END_GAME:
-                    game = service.endGame(game.getGameID());
+                    //params[0] is the winner
+                    game = service.endGame(game.getGameID(), params[0]);
                     return "success";
                     
                 case RESET:

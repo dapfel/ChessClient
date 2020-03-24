@@ -10,8 +10,6 @@ import javax.imageio.ImageIO;
  * @author dapfel
  */
 public class Pawn extends ChessPiece implements Serializable {
-    
-    private static boolean promotion;
 
     public Pawn(ChessGame.PlayerColor color, int rank, char file) {
         super(color, rank, file);
@@ -27,15 +25,11 @@ public class Pawn extends ChessPiece implements Serializable {
             }
             else if (file == newFile && (rank == newRank - 1)) {
                 if (board.getPiece(newFile, newRank) == null) {
-                    if (newRank == 8)
-                        promotion = true;
                     return true;
                 }
             }
             else if (newRank - rank == 1 && Math.abs(newFile - file) == 1) {
                 if (!(board.getPiece(newFile, newRank) == null)) {
-                    if (newRank == 8)
-                        promotion = true;
                     return true;
                 }
             }
@@ -47,28 +41,16 @@ public class Pawn extends ChessPiece implements Serializable {
             }
             else if (file == newFile && (rank == newRank + 1)) {
                 if (board.getPiece(newFile, newRank) == null) {
-                    if (newRank == 1)
-                        promotion = true;
                     return true;
                 }
             }
             else if (rank - newRank == 1 && Math.abs(newFile - file) == 1) {
-                if (!(board.getPiece(newFile, newRank) == null)) {
-                    if (newRank == 8)
-                        promotion = true;                     
+                if (!(board.getPiece(newFile, newRank) == null)) {                    
                     return true;
                 }
             }
         }
         return false;
-    }
-
-    public static boolean isPromotion() {
-        return promotion;
-    }
-
-    public static void setPromotion(boolean promotion) {
-        Pawn.promotion = promotion;
     }
 
     @Override
