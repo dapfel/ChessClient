@@ -55,9 +55,9 @@ public class GamePage implements Serializable {
         setGameOverListener(chessGame.getGameOverProperty());
         
         lastMoveTimer = new Timer();
-        lastMoveGetter = new LastMoveGetter(this, lastMoveTimer);
+        lastMoveGetter = new LastMoveGetter(this, lastMoveTimer, 2000);
         if (chessGame.getPlayerColor().equals(PlayerColor.BLACK))
-            lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
+            lastMoveTimer.schedule(lastMoveGetter, 0, 2000);
         
         BorderPane border = new BorderPane();
         border.setTop(topHbox());
@@ -72,7 +72,7 @@ public class GamePage implements Serializable {
             lastMoveTimer.cancel();
         }
         else {
-            lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
+            lastMoveTimer.schedule(lastMoveGetter, 0, 2000);
             chessGame.getBoardGUI().freezeBoard();
         }
         if (ServerNegotiationTask.getGame().getMove() == null)
@@ -202,8 +202,8 @@ public class GamePage implements Serializable {
             case "success":
                 ChessClientApp.setSavedGame(new SavedGame(this, opponent));
                 lastMoveTimer = new Timer();
-                lastMoveGetter = new LastMoveGetter(this, lastMoveTimer);
-                lastMoveTimer.schedule(lastMoveGetter, 5000, 5000);
+                lastMoveGetter = new LastMoveGetter(this, lastMoveTimer, 2000);
+                lastMoveTimer.schedule(lastMoveGetter, 0, 2000);
                 break;
             case "IOException":{
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -240,4 +240,14 @@ public class GamePage implements Serializable {
     public String getOpponent() {
         return opponent;
     }
+
+    public void setLastMoveGetter(LastMoveGetter lastMoveGetter) {
+        this.lastMoveGetter = lastMoveGetter;
+    }
+
+    public void setLastMoveTimer(Timer lastMoveTimer) {
+        this.lastMoveTimer = lastMoveTimer;
+    }
+    
+    
 }

@@ -22,15 +22,18 @@ public class LastMoveGetter extends TimerTask implements Serializable {
     private final GamePage gamePage;
     private final ListeningExecutorService pool;
     private final ChessGame chessGame;
-    private final Timer lastMoveTimer;
+    private Timer lastMoveTimer;
     private final String opponent;
+    private int attempts;
+    private int pollInterval;
     
-    public LastMoveGetter(GamePage gamePage, Timer lastMoveTimer) {
+    public LastMoveGetter(GamePage gamePage, Timer lastMoveTimer, int pollInterval) {
         this.gamePage = gamePage;
         pool = ChessClientApp.getPool();
         this.chessGame = gamePage.getChessGame();
         this.lastMoveTimer = lastMoveTimer;
         this.opponent = gamePage.getOpponent();
+        this.pollInterval = pollInterval; // miliseconds
     }
 
     @Override
@@ -54,6 +57,20 @@ public class LastMoveGetter extends TimerTask implements Serializable {
                             chessGame.processOpponentsMove(currentMove);  
                             ChessClientApp.setSavedGame(new SavedGame(gamePage, opponent));
                         });
+                    }
+                    else if ("success".equals(response) && currentMove != null && currentMove.equals(previousMove)) {
+                        attempts++;
+                        System.out.println("Hello: " + attempts + "  " + pollInterval);
+                        if (attempts > 4) {
+                            pollInterval = pollInterval * 2;
+                            lastMoveTimer.cancel();
+                            LastMoveGetter lastMoveGetter = LastMoveGetter.this;
+                            lastMoveTimer = new Timer();
+                            lastMoveGetter.gamePage.setLastMoveTimer(lastMoveTimer);
+                            LastMoveGetter newLastMoveGetter = new LastMoveGetter(lastMoveGetter.gamePage, lastMoveTimer, pollInterval);
+                            lastMoveGetter.gamePage.setLastMoveGetter(newLastMoveGetter);
+                            lastMoveTimer.schedule(newLastMoveGetter, 0, pollInterval);
+                        }
                     }
                     else if ("IOException".equals(response)) {
 

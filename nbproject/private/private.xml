@@ -3,10 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/ChessBoardGUI.java</file>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/ChessClientApp.java</file>
-            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/GamePage.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGUI/LastMoveGetter.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ServerAccess/ChessServerService.java</file>
             <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ChessGameLogic/ChessGame.java</file>
+            <file>file:/C:/Users/user/Documents/NetBeansProjects/ChessClient/src/ServerAccess/ServerNegotiationTask.java</file>
         </group>
     </open-files>
 </project-private>
